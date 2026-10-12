@@ -1,0 +1,13 @@
+order_id,order_date,region,segment,amount,target_amount
+1001,2026-01-05,West,Enterprise,1200.50,1000
+1002,2026-01-12,East,SMB,340.00,400
+1003,2026-01-19,West,SMB,410.25,400
+1004,2026-02-02,North,Enterprise,2100.00,2000
+1005,2026-02-09,South,Mid-Market,780.40,700
+1006,2026-02-16,East,Enterprise,1650.00,1500
+1007,2026-03-03,North,SMB,295.10,300
+1008,2026-03-10,West,Mid-Market,905.75,900
+1009,2026-03-17,South,Enterprise,1980.00,2000
+1010,2026-04-06,East,Mid-Market,860.00,800
+1011,2026-04-13,North,Enterprise,2300.90,2200
+1012,2026-04-20,West,SMB,380.00,400

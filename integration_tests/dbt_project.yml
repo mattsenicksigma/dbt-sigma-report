@@ -1,0 +1,37 @@
+name: 'sigma_report_integration_tests'
+version: '1.0.0'
+config-version: 2
+profile: 'sigma_report_integration_tests'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+dispatch:
+  - macro_namespace: sigma_report
+    search_order: ['sigma_report_integration_tests', 'sigma_report']
+
+flags:
+  # Ask dbt to check macros/schema.yml against the real macro signatures - the strictness dbt 2.x
+  # applies by default. Warnings are promoted to errors in CI (--warn-error on dbt 1.x).
+  validate_macro_args: true
+
+vars:
+  # The Sigma ids the reports use. Nothing is hardcoded in the tests: they compare against these vars,
+  # and the golden files hold placeholders. Supply real ids through the environment (e.g. before
+  # `export_reports.py --push --dry-run`); the defaults are placeholders, not real ids, and no real id
+  # belongs in this repository.
+  #   SIGMA_CONNECTION_ID  Sigma connection to the warehouse
+  #   SIGMA_FOLDER_ID      folder new reports are created in
+  #   SIGMA_DATA_MODEL_ID  the Sigma data model created from sigma_sales_model
+  sigma_connection_id: "{{ env_var('SIGMA_CONNECTION_ID', '00000000-0000-0000-0000-000000000001') }}"
+  sigma_folder_id: "{{ env_var('SIGMA_FOLDER_ID', '00000000-0000-0000-0000-000000000002') }}"
+  sigma_data_model_ids:
+    sigma_sales_model: "{{ env_var('SIGMA_DATA_MODEL_ID', '00000000-0000-0000-0000-000000000003') }}"
+  # Re-skin every report: only the keys listed here change, the rest keep the package defaults.
+  sigma_report_theme:
+    hue: Indigo
+    colors:
+      primary: "#1A70F1"

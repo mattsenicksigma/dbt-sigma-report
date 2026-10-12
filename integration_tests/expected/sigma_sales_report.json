@@ -1,0 +1,531 @@
+{
+  "contents": {
+    "config": {
+      "margin": 40,
+      "pageHeight": 1123,
+      "pageWidth": 794
+    },
+    "elements": [
+      {
+        "body": "# Sales summary\n\n<span style=\"color: #737373\">Hand-assembled from primitives</span>",
+        "id": "95803d8335",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "direction": "horizontal",
+        "id": "e135b18586",
+        "kind": "divider",
+        "style": {
+          "color": "#e5e5e5",
+          "strokeStyle": "solid",
+          "width": 1
+        }
+      },
+      {
+        "columns": [
+          {
+            "format": {
+              "formatString": ",.0f",
+              "kind": "number",
+              "prefix": "$"
+            },
+            "formula": "Sum([Amount])",
+            "id": "31bb510f86"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "271652d713"
+          },
+          {
+            "formula": "Sum([Target Amount])",
+            "id": "58f73555eb"
+          },
+          {
+            "formula": "[stg_orders/Target Amount]",
+            "id": "37ca3dddf8"
+          }
+        ],
+        "comparison": {
+          "colorBad": "#c10007",
+          "colorGood": "#008236",
+          "direction": "higher",
+          "display": "percentage",
+          "label": "plan",
+          "labelColor": "#737373"
+        },
+        "comparisonColumn": {
+          "columnId": "58f73555eb"
+        },
+        "id": "83464a9bf5",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Revenue"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "31bb510f86",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "CountDistinct([Order Id])",
+            "id": "7b0cc5f2f7"
+          },
+          {
+            "formula": "[stg_orders/Order Id]",
+            "id": "206375d3af"
+          },
+          {
+            "formula": "DateTrunc(\"month\", [stg_orders/Order Date])",
+            "id": "7cb61c105c",
+            "name": "Trend month"
+          }
+        ],
+        "comparison": {
+          "colorBad": "#c10007",
+          "colorGood": "#008236",
+          "direction": "higher",
+          "display": "percentage",
+          "labelColor": "#737373"
+        },
+        "id": "e23575c8c7",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Orders"
+        },
+        "periodComparison": "month",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "timeline": {
+          "columnId": "7cb61c105c"
+        },
+        "trend": {
+          "areaStyle": "gradient",
+          "shape": "area",
+          "valueColor": "#1A70F1"
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "7b0cc5f2f7",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "color": {
+          "by": "category",
+          "column": "29d483e2b7"
+        },
+        "columns": [
+          {
+            "formula": "DateTrunc(\"month\", [Order Date])",
+            "id": "e063d40351"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "54079f81c5"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "e4d5203e53"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "a9fe325aac"
+          },
+          {
+            "formula": "[stg_orders/Segment]",
+            "id": "29d483e2b7"
+          }
+        ],
+        "id": "0dff74f759",
+        "kind": "line-chart",
+        "name": "Revenue by month",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "e063d40351"
+        },
+        "yAxis": {
+          "columnIds": [
+            "e4d5203e53"
+          ]
+        }
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#009966"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "8bddfd8619"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "c3b2ec513c"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "da6b34e6a9"
+          }
+        ],
+        "dataLabel": {
+          "labels": "shown"
+        },
+        "gap": {
+          "width": "small"
+        },
+        "id": "f30a28e7de",
+        "kind": "bar-chart",
+        "name": "Revenue by region",
+        "orientation": "horizontal",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "8bddfd8619",
+          "sort": {
+            "by": "c3b2ec513c",
+            "direction": "descending"
+          }
+        },
+        "yAxis": {
+          "columnIds": [
+            "c3b2ec513c"
+          ]
+        }
+      },
+      {
+        "body": "### Mix",
+        "id": "358cf4205e",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "columns": [
+          {
+            "formula": "Sum([Amount])",
+            "id": "a54391176e"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "e4d854bf9a"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "1b44dac160"
+          },
+          {
+            "formula": "[stg_orders/Segment]",
+            "id": "8e156c347c"
+          }
+        ],
+        "columnsBy": [
+          {
+            "columnId": "8e156c347c"
+          }
+        ],
+        "id": "524d2d67d0",
+        "kind": "pivot-table",
+        "name": "Revenue by region and segment",
+        "rowsBy": [
+          {
+            "columnId": "1b44dac160"
+          }
+        ],
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "values": [
+          "a54391176e"
+        ]
+      },
+      {
+        "body": "### Order detail",
+        "id": "7a4d677b96",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "columns": [
+          {
+            "formula": "[stg_orders/Order Id]",
+            "id": "ce0712d6fe"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "fa1100cb2a"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "44ab17cca8"
+          },
+          {
+            "format": {
+              "formatString": ",.2f",
+              "kind": "number",
+              "prefix": "$"
+            },
+            "formula": "[Amount]",
+            "id": "a1f7681d58",
+            "name": "Revenue"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "87893484a8"
+          }
+        ],
+        "id": "3f0a211ee4",
+        "kind": "table",
+        "name": "Orders",
+        "order": [
+          "ce0712d6fe",
+          "fa1100cb2a",
+          "44ab17cca8",
+          "a1f7681d58"
+        ],
+        "sort": [
+          {
+            "columnId": "fa1100cb2a",
+            "direction": "descending"
+          }
+        ],
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        }
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#009966"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Order Id]",
+            "id": "24888d8a60"
+          },
+          {
+            "formula": "[Revenue]",
+            "id": "607fce1827"
+          }
+        ],
+        "id": "0ba5b04c05",
+        "kind": "bar-chart",
+        "name": "Largest orders",
+        "source": {
+          "elementId": "3f0a211ee4",
+          "kind": "table"
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "24888d8a60",
+          "sort": {
+            "by": "607fce1827",
+            "direction": "descending"
+          }
+        },
+        "yAxis": {
+          "columnIds": [
+            "607fce1827"
+          ]
+        }
+      },
+      {
+        "id": "d67e57499a",
+        "kind": "embed",
+        "url": "https://example.com/status"
+      },
+      {
+        "body": "**Acme Corp** | Sales",
+        "id": "8249016466",
+        "kind": "text",
+        "verticalAlign": "top"
+      },
+      {
+        "body": "Confidential",
+        "id": "e7fce055be",
+        "kind": "text",
+        "verticalAlign": "top"
+      },
+      {
+        "body": "Generated by dbt",
+        "id": "b9349e4345",
+        "kind": "text",
+        "verticalAlign": "top"
+      }
+    ],
+    "kind": "report",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"95803d8335\" x=\"0\" y=\"0\" width=\"714\" height=\"64\"/>\n  <Element elementId=\"e135b18586\" x=\"0\" y=\"80\" width=\"714\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"108\" width=\"232\" height=\"96\"/>\n  <Element elementId=\"e23575c8c7\" x=\"0\" y=\"220\" width=\"232\" height=\"96\"/>\n  <Element elementId=\"0dff74f759\" x=\"248\" y=\"108\" width=\"466\" height=\"260\"/>\n  <Element elementId=\"f30a28e7de\" x=\"0\" y=\"384\" width=\"714\" height=\"200\"/>\n  <Element elementId=\"358cf4205e\" x=\"0\" y=\"600\" width=\"714\" height=\"32\"/>\n  <Element elementId=\"524d2d67d0\" x=\"0\" y=\"648\" width=\"714\" height=\"300\"/>\n</Page>\n<Page id=\"ca5678930d\">\n  <Element elementId=\"7a4d677b96\" x=\"0\" y=\"0\" width=\"714\" height=\"32\"/>\n  <Element elementId=\"3f0a211ee4\" x=\"0\" y=\"48\" width=\"714\" height=\"420\"/>\n  <Element elementId=\"0ba5b04c05\" x=\"0\" y=\"484\" width=\"714\" height=\"260\"/>\n  <Element elementId=\"d67e57499a\" x=\"0\" y=\"760\" width=\"714\" height=\"120\"/>\n</Page>\n<Panel id=\"fbd84231ed\" type=\"header\">\n  <Element elementId=\"8249016466\" x=\"0\" y=\"0\" width=\"523\" height=\"32\"/>\n  <Element elementId=\"e7fce055be\" x=\"539\" y=\"0\" width=\"175\" height=\"32\"/>\n</Panel>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"b9349e4345\" x=\"0\" y=\"0\" width=\"714\" height=\"24\"/>\n</Panel>\n",
+    "pages": [
+      {
+        "id": "348e718e5d",
+        "name": "Summary"
+      },
+      {
+        "id": "ca5678930d",
+        "name": "Detail"
+      }
+    ],
+    "panels": [
+      {
+        "config": {
+          "height": 48
+        },
+        "id": "fbd84231ed",
+        "pages": [
+          "348e718e5d",
+          "ca5678930d"
+        ],
+        "title": "Header",
+        "type": "header"
+      },
+      {
+        "config": {
+          "height": 32
+        },
+        "id": "e2a27834d6",
+        "pages": [
+          "348e718e5d",
+          "ca5678930d"
+        ],
+        "title": "Footer",
+        "type": "footer"
+      }
+    ],
+    "schemaVersion": 1,
+    "settings": {
+      "theme": {
+        "name": "Light",
+        "overrides": {
+          "borderRadius": "round",
+          "categoricalScheme": [
+            "#007a55",
+            "#f54900",
+            "#432dd7"
+          ],
+          "colorOverrides": [
+            {
+              "color": "#fafafa",
+              "name": "backgroundCanvas"
+            }
+          ],
+          "colors": {
+            "danger": "#c10007",
+            "highlight": "#1A70F1",
+            "success": "#008236",
+            "surface": "#ffffff",
+            "text": "#0a0a0a",
+            "warning": "#bb4d00"
+          },
+          "fonts": {
+            "dataFont": "Inter",
+            "textFont": "Inter"
+          }
+        }
+      }
+    }
+  },
+  "description": "Hand-assembled report",
+  "folderId": "00000000-0000-0000-0000-000000000002",
+  "name": "Sales report"
+}

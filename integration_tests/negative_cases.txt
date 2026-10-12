@@ -1,0 +1,47 @@
+# macro | text the compiler error must contain | optional --vars
+#
+# Every `assert_*_rejected` macro in macros/assert_rejected.sql must be listed here exactly once (and
+# vice versa); scripts/run_integration_tests_duckdb.sh enforces it. The expected text is matched as a
+# literal substring, so a case cannot pass because of a typo in the test or an unrelated error.
+
+assert_unknown_hue_rejected | sigma_report.theme: unknown hue 'Chartreuse'
+assert_unknown_base_rejected | sigma_report.theme: unknown base 'Marble'
+assert_unknown_color_token_rejected | sigma_report.color: unknown color token 'prymary'
+
+assert_missing_connection_rejected | sigma_report.warehouse_table: connection_id is required | {sigma_connection_id: ''}
+assert_short_path_rejected | sigma_report.warehouse_table: path must be [database, schema, table]
+assert_bad_source_rejected | sigma_report.kpi: source must be a sigma_report source or element
+assert_bad_element_source_rejected | sigma_report.element: expected an element built by a sigma_report macro
+
+assert_bad_field_rejected | sigma_report.bar_chart: a field must be a string or sigma_report.field(...)
+
+assert_unnamed_element_rejected | sigma_report.bar_chart: set `name=` or `key=` so the element gets a stable id
+assert_bad_height_rejected | sigma_report.bar_chart: h must be a positive number of pixels
+assert_bad_sort_direction_rejected | sigma_report.bar_chart: sort direction must be 'asc' or 'desc'
+assert_table_without_columns_rejected | sigma_report.table: columns is required
+assert_pivot_without_axes_rejected | sigma_report.pivot_table: give at least one of `rows` or `cols`
+assert_extend_protected_key_rejected | sigma_report.extend: 'id' can't be overridden
+assert_extend_non_element_rejected | sigma_report.extend: expected an element built by a sigma_report macro
+assert_raw_protected_key_rejected | sigma_report.raw: 'kind' can't be set
+assert_unknown_chart_type_rejected | sigma_report.chart_from_spec: unknown chart type 'radar'
+assert_chart_spec_without_type_rejected | sigma_report.chart_from_spec: a chart spec is a mapping with at least `type`
+assert_kpi_spec_without_value_rejected | sigma_report.kpi_from_spec: a KPI spec is a mapping with at least `value`
+
+assert_empty_row_rejected | sigma_report.row: a row needs at least one element
+assert_row_widths_mismatch_rejected | sigma_report.row: widths has 1 entries but the row has 2 elements
+assert_row_bad_width_rejected | sigma_report.row: widths must be positive numbers
+assert_nested_row_rejected | sigma_report.row: a row holds elements built by sigma_report macros
+assert_empty_stack_rejected | sigma_report.stack: a stack needs at least one element
+assert_stack_of_row_rejected | sigma_report.stack: a stack holds elements built by sigma_report macros
+assert_loose_stack_rejected | a stack(...) belongs inside a row(...)
+assert_unknown_page_size_rejected | sigma_report.report: unknown page_size 'postcard'
+assert_bad_custom_page_size_rejected | sigma_report.report: a custom page_size needs numeric `width` and `height`
+assert_bad_orientation_rejected | sigma_report.report: orientation must be 'portrait' or 'landscape'
+
+assert_empty_report_rejected | sigma_report.report: pages must not be empty
+assert_empty_page_rejected | sigma_report.page: page 'p' has no elements
+assert_duplicate_page_names_rejected | sigma_report.report: duplicate page name 'p'
+assert_duplicate_element_rejected | resolve to the same element id
+assert_page_overflow_rejected | content overflows the page by
+assert_block_taller_than_page_rejected | a block is 5000px tall
+assert_no_room_rejected | leave no room on a

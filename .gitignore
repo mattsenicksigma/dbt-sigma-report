@@ -1,0 +1,11 @@
+target/
+dbt_packages/
+logs/
+duckdb/
+*.duckdb
+*.duckdb.wal
+package-lock.yml
+.user.yml
+__pycache__/
+.venv/
+.claude/worktrees/
