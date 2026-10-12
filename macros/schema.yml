@@ -1,0 +1,1074 @@
+version: 2
+
+# Argument names and types here are validated by dbt against each macro's signature (dbt >= 1.10 warns
+# on a mismatch; dbt 2.x - Fusion - is stricter). Keep them in sync with the macro definitions.
+# Types must come from dbt's grammar: string, bool, int, any, list[...], dict[string,any].
+
+macros:
+  # ------------------------------------------------------------ report
+  - name: report
+    description: "Top-level assembler. Turns pages into a report in Sigma's code representation - the request body of `POST /v2/reports` - and validates it at parse time (empty report or page, duplicate page names, an element placed twice, content that does not fit its page)."
+    arguments:
+      - name: name
+        type: string
+        description: "Report name in Sigma."
+      - name: pages
+        type: list[any]
+        description: "List of `sigma_report.page(...)`. Page names must be unique."
+      - name: theme
+        type: dict[string,any]
+        description: "Per-report theme overrides, deep-merged over the `sigma_report_theme` project var."
+      - name: folder_id
+        type: string
+        description: "Sigma folder id. Defaults to the `sigma_folder_id` project var."
+      - name: report_id
+        type: string
+        description: "An existing Sigma report id, to update it instead of creating a new one. Omit on first create."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: page_size
+        type: any
+        description: "`letter` (default), `legal`, `tabloid`, `a4`, `a3`, `screen`, or a {width, height} mapping in pixels."
+      - name: orientation
+        type: string
+        description: "`portrait` or `landscape`; none keeps the preset's own shape."
+      - name: margin
+        type: int
+        description: "Page margin in pixels."
+      - name: gap
+        type: int
+        description: "Space between blocks (or between a row's elements) in pixels. Defaults to the report's gap."
+      - name: header
+        type: any
+        description: "Elements / rows for a header panel repeated on every page. none = no header."
+      - name: footer
+        type: any
+        description: "Elements / rows for a footer panel repeated on every page. none = no footer."
+      - name: header_height
+        type: int
+        description: "Header panel height in pixels."
+      - name: footer_height
+        type: int
+        description: "Footer panel height in pixels."
+  - name: page
+    description: "One page of a report: a name and the blocks (elements and rows) stacked on it, top to bottom. With `paginate=true` it continues onto further physical pages when it is taller than one."
+    arguments:
+      - name: name
+        type: string
+        description: "Page name."
+      - name: blocks
+        type: list[any]
+        description: "Elements, rows and/or lists of them, in reading order. Must not be empty."
+      - name: key
+        type: string
+        description: "Identity the page id is derived from; defaults to the name. Set it if you rename a page and want to keep its id."
+      - name: paginate
+        type: bool
+        description: "Let the page continue onto further pages instead of failing when its content is too tall."
+  - name: materialize
+    description: "Attaches a composed spec to the calling model's `meta.sigma_report` (via `config(meta=...)`, which replaces `meta` wholesale). The spec lands in `manifest.json` on `dbt parse`."
+    arguments:
+      - name: spec
+        type: any
+        description: "A report spec built by `report()` (or a `simple_*` composite); for `*_from_spec`, a mapping of that macro's arguments."
+      - name: materialized
+        type: string
+        description: "dbt materialization for the (otherwise empty) model. Default `view`; `ephemeral` creates nothing in the warehouse."
+
+  # ------------------------------------------------------------ layout
+  - name: row
+    description: "A horizontal band of elements sharing the page content width equally, or by relative `widths`. Every element is stretched to the tallest one's height."
+    arguments:
+      - name: elements
+        type: list[any]
+        description: "Elements and/or lists of elements."
+      - name: widths
+        type: list[any]
+        description: "Relative weights, one per element. Default: equal."
+      - name: gap
+        type: int
+        description: "Space between the elements in pixels. Defaults to the report's gap."
+      - name: pad
+        type: int
+        description: "Trailing empty weight, so a short row keeps the cell width of the rows above it."
+  - name: stack
+    description: "A vertical group of elements that fits in one cell of a row (two KPIs beside a chart). Elements keep their own heights."
+    arguments:
+      - name: elements
+        type: list[any]
+        description: "Elements and/or lists of elements (not rows or stacks)."
+      - name: gap
+        type: int
+        description: "Space between the stacked elements in pixels."
+  - name: page_dimensions
+    description: "The page size in pixels (96 per inch) for a preset name or a {width, height} mapping, with an optional orientation."
+    arguments:
+      - name: page_size
+        type: any
+        description: "Preset name or {width, height} mapping."
+      - name: orientation
+        type: string
+        description: "`portrait` or `landscape`; none keeps the preset's own shape."
+
+  # ------------------------------------------------------------ sources
+  - name: warehouse_table
+    description: "A warehouse table addressed by its physical [database, schema, table] path."
+    arguments:
+      - name: path
+        type: any
+        description: "[database, schema, table] for a warehouse table; for `freeze_id`, the stable path string to hash."
+      - name: connection_id
+        type: string
+        description: "Sigma connection id. Defaults to the `sigma_connection_id` project var."
+  - name: relation_path
+    description: "The one place the package decides the physical path of a dbt node. Dispatched: override `default__relation_path` in your own project to change it."
+    arguments:
+      - name: kind
+        type: string
+        description: "'ref' or 'source' for `relation_path`; an element kind (`bar-chart`, `text`, ...) elsewhere."
+      - name: name
+        type: string
+        description: "The model name, or 'source_name.table_name' for a source."
+      - name: database
+        type: string
+        description: "Database; defaults to the target's."
+      - name: schema
+        type: string
+        description: "Schema; defaults to the target's."
+      - name: identifier
+        type: string
+        description: "Table name; defaults to the node's name."
+  - name: default__relation_path
+    description: "The package's default for `relation_path`: the target's database and schema, and the node's name as the table."
+    arguments:
+      - name: kind
+        type: string
+        description: "'ref' or 'source' for `relation_path`; an element kind (`bar-chart`, `text`, ...) elsewhere."
+      - name: name
+        type: string
+        description: "The model name, or 'source_name.table_name' for a source."
+      - name: database
+        type: string
+        description: "Database; defaults to the target's."
+      - name: schema
+        type: string
+        description: "Schema; defaults to the target's."
+      - name: identifier
+        type: string
+        description: "Table name; defaults to the node's name."
+  - name: from_ref
+    description: "A dbt model, seed or snapshot as a warehouse table. Calls `ref()` so the report sits downstream of it in the DAG."
+    arguments:
+      - name: model_name
+        type: string
+        description: "Name of the dbt model."
+      - name: database
+        type: string
+        description: "Database; defaults to the target's."
+      - name: schema
+        type: string
+        description: "Schema; defaults to the target's."
+      - name: identifier
+        type: string
+        description: "Table name; defaults to the node's name."
+      - name: connection_id
+        type: string
+        description: "Sigma connection id. Defaults to the `sigma_connection_id` project var."
+  - name: from_source
+    description: "A dbt source as a warehouse table. Calls `source()` for lineage."
+    arguments:
+      - name: source_name
+        type: string
+        description: "Name of the dbt source."
+      - name: table_name
+        type: string
+        description: "The table's display name in the data model, if it was given a custom `display_name`."
+      - name: database
+        type: string
+        description: "Database; defaults to the target's."
+      - name: schema
+        type: string
+        description: "Schema; defaults to the target's."
+      - name: identifier
+        type: string
+        description: "Table name; defaults to the source table's name."
+      - name: connection_id
+        type: string
+        description: "Sigma connection id. Defaults to the `sigma_connection_id` project var."
+  - name: data_model
+    description: "A table inside a Sigma data model, addressed by its id and the table key it was given in `sigma_data_models.table()`."
+    arguments:
+      - name: data_model_id
+        type: string
+        description: "The Sigma data model id."
+      - name: table_key
+        type: string
+        description: "The `key` the table was given in `sigma_data_models.table()`."
+      - name: identifier
+        type: string
+        description: "Table name; defaults to the node's name."
+      - name: database
+        type: string
+        description: "Database; defaults to the target's."
+      - name: schema
+        type: string
+        description: "Schema; defaults to the target's."
+      - name: table_name
+        type: string
+        description: "The table's display name in the data model, if it was given a custom `display_name`."
+  - name: from_data_model
+    description: "`data_model` for a dbt model built with `sigma_data_models.materialize()`: `ref()`s it for lineage and looks its Sigma data model id up in the `sigma_data_model_ids` project var."
+    arguments:
+      - name: model_name
+        type: string
+        description: "Name of the dbt model."
+      - name: table_key
+        type: string
+        description: "The `key` the table was given in `sigma_data_models.table()`."
+      - name: data_model_id
+        type: string
+        description: "The Sigma data model id."
+      - name: identifier
+        type: string
+        description: "Table name; defaults to the node's name."
+      - name: database
+        type: string
+        description: "Database; defaults to the target's."
+      - name: schema
+        type: string
+        description: "Schema; defaults to the target's."
+      - name: table_name
+        type: string
+        description: "The table's display name in the data model, if it was given a custom `display_name`."
+  - name: element
+    description: "Another element in the same report as a source - a chart or KPI built on a table that is already on the page."
+    arguments:
+      - name: el
+        type: any
+        description: "An element built by a sigma_report macro."
+  - name: resolve_source
+    description: "Normalizes anything passed as `source=` (a source or an element) into a source dict. Raises on anything else."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: where
+        type: string
+        description: "Name of the calling macro, for error messages."
+
+  # ------------------------------------------------------------ fields
+  - name: field
+    description: "A column or formula with an optional display name, format and description. A bare string is accepted anywhere a field is."
+    arguments:
+      - name: formula
+        type: string
+        description: "A Sigma formula."
+      - name: name
+        type: string
+        description: "Display name of the column."
+      - name: format
+        type: any
+        description: "A `sigma_report.format_*()` result."
+      - name: description
+        type: string
+        description: "Column description."
+  - name: format_number
+    description: "A number format from a d3 format string, with optional prefix, suffix and null display."
+    arguments:
+      - name: pattern
+        type: string
+        description: "A d3 format string (numbers) or d3 time format (dates)."
+      - name: prefix
+        type: string
+        description: "Text before the number."
+      - name: suffix
+        type: string
+        description: "Text after the number."
+      - name: null_as
+        type: string
+        description: "Display value for nulls."
+  - name: format_integer
+    description: "1,234,567"
+  - name: format_currency
+    description: "$1,234 (or $1,234.50 with decimals=2)."
+    arguments:
+      - name: decimals
+        type: int
+        description: "Digits after the decimal point."
+      - name: symbol
+        type: string
+        description: "Currency symbol."
+  - name: format_percent
+    description: "12.3% - the value is a fraction (0.123)."
+    arguments:
+      - name: decimals
+        type: int
+        description: "Digits after the decimal point."
+  - name: format_compact
+    description: "Compact SI notation: 1.2k, 3.4M."
+    arguments:
+      - name: decimals
+        type: int
+        description: "Digits after the decimal point."
+  - name: format_date
+    description: "A date or timestamp from a d3 time format string."
+    arguments:
+      - name: pattern
+        type: string
+        description: "A d3 format string (numbers) or d3 time format (dates)."
+  - name: add_column
+    description: "Registers a field as a column on an element and returns its column id. For writing your own element macros."
+    arguments:
+      - name: columns
+        type: any
+        description: "The element's column list, mutated in place."
+      - name: element_id
+        type: string
+        description: "Id of the element the column belongs to."
+      - name: f
+        type: any
+        description: "A field (string or `field()`)."
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: where
+        type: string
+        description: "Name of the calling macro, for error messages."
+      - name: role
+        type: string
+        description: "The Sigma channel the column feeds (x, y, color, ...); part of the column id."
+  - name: add_columns
+    description: "`add_column` for a list of fields; returns the list of column ids in order."
+    arguments:
+      - name: columns
+        type: any
+        description: "The element's column list, mutated in place."
+      - name: element_id
+        type: string
+        description: "Id of the element the column belongs to."
+      - name: fields
+        type: list[any]
+        description: "A list of fields."
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: where
+        type: string
+        description: "Name of the calling macro, for error messages."
+      - name: role
+        type: string
+        description: "The Sigma channel the column feeds (x, y, color, ...); part of the column id."
+  - name: normalize_field
+    description: "Turns a string or `field()` into a field dict with a resolved Sigma formula."
+    arguments:
+      - name: f
+        type: any
+        description: "A field (string or `field()`)."
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: where
+        type: string
+        description: "Name of the calling macro, for error messages."
+
+  # ------------------------------------------------------------ elements
+  - name: kpi
+    description: "A KPI tile, optionally compared with a target measure (`compare_to`) or with the previous period (`timeline` + `period`), with an optional sparkline."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: value
+        type: any
+        description: "The measure, as a field."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: format
+        type: any
+        description: "A `sigma_report.format_*()` result applied to the value."
+      - name: compare_to
+        type: any
+        description: "A measure to compare the value against ('vs plan')."
+      - name: compare_label
+        type: string
+        description: "Label for the comparison."
+      - name: timeline
+        type: any
+        description: "A date field; the KPI becomes the latest period's value compared with the one before."
+      - name: period
+        type: string
+        description: "Period for the timeline: year, quarter, month, week, day."
+      - name: trend
+        type: bool
+        description: "Show a sparkline (needs `timeline`)."
+      - name: direction
+        type: string
+        description: "Which way is good: `higher`, `lower` or `none`."
+      - name: description
+        type: string
+        description: "Text shown under the value."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: bar_chart
+    description: "A bar chart. Sorted by its first measure, descending, unless told otherwise."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: x
+        type: any
+        description: "The category or time axis, as a field."
+      - name: y
+        type: any
+        description: "The measure, or a list of measures."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: sort_by
+        type: any
+        description: "`x`, `y`, or a field to sort the axis by."
+      - name: sort_direction
+        type: string
+        description: "`asc` or `desc`."
+      - name: stacking
+        type: string
+        description: "`stacked` or `normalized` (bar and area)."
+      - name: labels
+        type: bool
+        description: "Show data labels."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: horizontal
+        type: bool
+        description: "Horizontal bars."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: line_chart
+    description: "A line chart."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: x
+        type: any
+        description: "The category or time axis, as a field."
+      - name: y
+        type: any
+        description: "The measure, or a list of measures."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: sort_by
+        type: any
+        description: "`x`, `y`, or a field to sort the axis by."
+      - name: sort_direction
+        type: string
+        description: "`asc` or `desc`."
+      - name: labels
+        type: bool
+        description: "Show data labels."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: area_chart
+    description: "An area chart."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: x
+        type: any
+        description: "The category or time axis, as a field."
+      - name: y
+        type: any
+        description: "The measure, or a list of measures."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: sort_by
+        type: any
+        description: "`x`, `y`, or a field to sort the axis by."
+      - name: sort_direction
+        type: string
+        description: "`asc` or `desc`."
+      - name: stacking
+        type: string
+        description: "`stacked` or `normalized` (bar and area)."
+      - name: labels
+        type: bool
+        description: "Show data labels."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: scatter_chart
+    description: "A scatter chart; `x` and `y` are both measures and `size` optionally scales the marks."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: x
+        type: any
+        description: "A measure."
+      - name: y
+        type: any
+        description: "A measure."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: size
+        type: any
+        description: "A field that scales scatter marks."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: pie_chart
+    description: "A pie chart: `category` is the slice field, `value` the measure."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: category
+        type: any
+        description: "The slice field."
+      - name: value
+        type: any
+        description: "The measure, as a field."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: labels
+        type: bool
+        description: "Show data labels."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: donut_chart
+    description: "A donut chart: like a pie, plus an optional `hole_value` measure shown in the middle."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: category
+        type: any
+        description: "The slice field."
+      - name: value
+        type: any
+        description: "The measure, as a field."
+      - name: hole_value
+        type: any
+        description: "A measure shown in the donut's hole."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: labels
+        type: bool
+        description: "Show data labels."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: table
+    description: "A table element. `h` is the height reserved for it on the page, since row counts are unknown at compile time."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: columns
+        type: any
+        description: "Fields shown, in order (a table); or an element's column list (`add_column`)."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: sort
+        type: list[any]
+        description: "Sort items: a field, or a (field, 'asc'|'desc') pair."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: pivot_table
+    description: "A pivot table: `rows` and `cols` are the grouping levels, `values` the measures."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: values
+        type: any
+        description: "One measure, or a list of measures."
+      - name: rows
+        type: any
+        description: "Row grouping field(s)."
+      - name: cols
+        type: any
+        description: "Column grouping field(s)."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: text
+    description: "A markdown text element."
+    arguments:
+      - name: body
+        type: string
+        description: "Markdown body. Supports Sigma's inline HTML spans and `{{formula}}` segments."
+      - name: key
+        type: string
+        description: "Identity for the id; defaults to the body."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: align
+        type: string
+        description: "Vertical alignment: `top`, `center` or `bottom`."
+  - name: title
+    description: "A report title: a level-1 heading with an optional muted subtitle."
+    arguments:
+      - name: text
+        type: string
+        description: "Text."
+      - name: subtitle
+        type: string
+        description: "Muted text under the title."
+      - name: key
+        type: string
+        description: "Identity for the id; defaults to the text."
+      - name: h
+        type: int
+        description: "Height in pixels."
+  - name: heading
+    description: "A section heading."
+    arguments:
+      - name: text
+        type: string
+        description: "Text."
+      - name: key
+        type: string
+        description: "Identity for the id; defaults to the text."
+      - name: h
+        type: int
+        description: "Height in pixels."
+  - name: divider
+    description: "A rule between sections. Give repeated dividers distinct keys."
+    arguments:
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: direction
+        type: string
+        description: "`horizontal` or `vertical`."
+      - name: h
+        type: int
+        description: "Height in pixels."
+  - name: image
+    description: "An image from a URL, such as a logo."
+    arguments:
+      - name: url
+        type: string
+        description: "Image URL."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: alt
+        type: string
+        description: "Alternative text."
+      - name: h
+        type: int
+        description: "Height in pixels."
+      - name: fit
+        type: string
+        description: "`contain`, `cover`, `scale-down` or `stretch`."
+  - name: extend
+    description: "Deep-merges raw Sigma properties onto an element built with a normal macro. The element is updated in place and returned."
+    arguments:
+      - name: el
+        type: any
+        description: "An element built by a sigma_report macro."
+      - name: options
+        type: dict[string,any]
+        description: "Raw Sigma properties to merge on."
+  - name: raw
+    description: "An element of any Sigma kind this package has no macro for (gauge, combo chart, embed, repeated container, ...), with Sigma's own properties used as written."
+    arguments:
+      - name: kind
+        type: string
+        description: "The Sigma element kind."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: properties
+        type: dict[string,any]
+        description: "Sigma's own fields, used as written."
+      - name: h
+        type: int
+        description: "Height in pixels."
+  - name: new_element
+    description: "The scaffolding every element macro starts from: a stable id and a pixel height. For writing your own element macros."
+    arguments:
+      - name: kind
+        type: string
+        description: "The Sigma element kind."
+      - name: where
+        type: string
+        description: "Name of the calling macro, for error messages."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: name
+        type: string
+        description: "Used for the id when `key` is none."
+      - name: h
+        type: int
+        description: "Height in pixels."
+  - name: card_style
+    description: "The default card look of a data element (white surface, hairline border), or the `style` passed in. `none` when the theme has `cards: false`."
+    arguments:
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+
+  # ------------------------------------------------------------ components
+  - name: report_header
+    description: "A title block: the title, a muted subtitle and a rule. Returns a list of blocks."
+    arguments:
+      - name: title
+        type: string
+        description: "Title text."
+      - name: subtitle
+        type: string
+        description: "Muted text under the title."
+      - name: key
+        type: string
+        description: "Identity for the title's id; defaults to the title."
+  - name: section
+    description: "A heading followed by its blocks. Returns a list of blocks."
+    arguments:
+      - name: heading
+        type: string
+        description: "Heading text."
+      - name: blocks
+        type: list[any]
+        description: "Elements, rows and/or lists of them, in reading order. Must not be empty."
+      - name: key
+        type: string
+        description: "Identity for the heading's id; defaults to the heading."
+  - name: kpi_row
+    description: "A band of KPI tiles sharing the page width equally."
+    arguments:
+      - name: kpis
+        type: list[any]
+        description: "List of KPI mappings (see `kpi_from_spec`)."
+      - name: gap
+        type: int
+        description: "Space between tiles in pixels. Defaults to the report's gap."
+  - name: grid
+    description: "Groups elements into rows of `per_row`, so a list of charts becomes a tidy grid; a short last row keeps the same cell width."
+    arguments:
+      - name: elements
+        type: list[any]
+        description: "Elements and/or lists of elements."
+      - name: per_row
+        type: int
+        description: "Elements per row."
+      - name: gap
+        type: int
+        description: "Space between cells in pixels. Defaults to the report's gap."
+  - name: kpi_from_spec
+    description: "Builds a KPI from a mapping whose keys are `sigma_report.kpi`'s arguments. The calling convention `simple_dashboard` uses."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: spec
+        type: any
+        description: "A report spec built by `report()` (or a `simple_*` composite); for `*_from_spec`, a mapping of that macro's arguments."
+  - name: chart_from_spec
+    description: "Builds a chart from a mapping: `type` (bar, line, area, scatter, pie, donut) plus that chart macro's arguments."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: spec
+        type: any
+        description: "A report spec built by `report()` (or a `simple_*` composite); for `*_from_spec`, a mapping of that macro's arguments."
+  - name: report_from_args
+    description: "Assembles blocks into a one-page, paginating report. The shared tail of the `simple_*` composites."
+    arguments:
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: blocks
+        type: list[any]
+        description: "Elements, rows and/or lists of them, in reading order. Must not be empty."
+      - name: args
+        type: dict[string,any]
+        description: "A mapping of `sigma_report.report()` arguments (see `report_args`)."
+  - name: simple_dashboard
+    description: "A complete one-page dashboard from data alone: title, KPI band, chart rows and a detail table. Returns a finished report spec, ready for `materialize()`."
+    arguments:
+      - name: name
+        type: string
+        description: "Report name (also the page's name and the title)."
+      - name: source
+        type: any
+        description: "Where the rows come from (see `from_ref`)."
+      - name: subtitle
+        type: string
+        description: "Muted text under the title."
+      - name: kpis
+        type: list[any]
+        description: "List of KPI mappings (see `kpi_from_spec`)."
+      - name: charts
+        type: list[any]
+        description: "List of chart mappings (see `chart_from_spec`)."
+      - name: charts_per_row
+        type: int
+        description: "How many charts share a row."
+      - name: table_columns
+        type: list[any]
+        description: "Fields for a detail table; omit for no table."
+      - name: table_name
+        type: string
+        description: "The table's display name in the data model, if it was given a custom `display_name`."
+      - name: table_h
+        type: int
+        description: "Height reserved for the detail table, in pixels."
+      - name: table_sort
+        type: list[any]
+        description: "Sort for the detail table: fields or (field, 'asc'|'desc') pairs."
+      - name: report_args
+        type: dict[string,any]
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+  - name: simple_leaderboard
+    description: "A ranking report: a KPI for the overall measure and one ranked horizontal bar chart per dimension. Returns a finished report spec."
+    arguments:
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: dimensions
+        type: list[any]
+        description: "Fields to rank by; each gets its own bar chart."
+      - name: measure
+        type: string
+        description: "The measure to rank, as a formula."
+      - name: measure_name
+        type: string
+        description: "Display name of the measure."
+      - name: subtitle
+        type: string
+        description: "Muted text under the title."
+      - name: measure_format
+        type: any
+        description: "A `sigma_report.format_*()` result for the measure."
+      - name: bar_h
+        type: int
+        description: "Height of each ranked bar chart in pixels."
+      - name: report_args
+        type: dict[string,any]
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+
+  # ------------------------------------------------------------ theme
+  - name: theme
+    description: "The fully-resolved theme (every token as a hex string): defaults, then the `sigma_report_theme` project var, then the override passed here."
+    arguments:
+      - name: override
+        type: dict[string,any]
+        description: "Theme overrides layered on top of the project var."
+  - name: theme_config
+    description: "The merged theme settings before token expansion."
+    arguments:
+      - name: override
+        type: dict[string,any]
+        description: "Theme overrides layered on top of the project var."
+  - name: default_theme
+    description: "The package's default theme: Sigma's Neutral base and Blue hue."
+  - name: base_palettes
+    description: "The neutral scales a theme's `base` can name: Neutral, Stone, Zinc, Slate."
+  - name: hue_palettes
+    description: "The accent scales a theme's `hue` can name: Neutral, Blue, Indigo, Violet, Emerald, Teal, Green, Rose, Orange, Amber."
+  - name: color
+    description: "Resolves a design token (or hex) to a hex string. Raises on an unknown token."
+    arguments:
+      - name: token
+        type: string
+        description: "A color token or a hex value."
+      - name: override
+        type: dict[string,any]
+        description: "Theme overrides layered on top of the project var."
+  - name: color_ref
+    description: "A late-bound color marker that `report()` resolves against the final theme, so a report-level theme recolors elements built earlier."
+    arguments:
+      - name: token
+        type: string
+        description: "A color token (`primary`, `ink`, ...) or a hex value."
+  - name: theme_settings
+    description: "The theme as the `settings` block of a report's `contents`."
+    arguments:
+      - name: override
+        type: dict[string,any]
+        description: "Theme overrides layered on top of the project var."
+
+  # ------------------------------------------------------------ utilities
+  - name: freeze_id
+    description: "A deterministic id: the md5 of a stable path, truncated to `length` characters."
+    arguments:
+      - name: path
+        type: any
+        description: "Stable path string to hash."
+      - name: length
+        type: int
+        description: "Characters to keep."
+  - name: titleize
+    description: "`snake_case` to `Title Case`, leaving anything with an uppercase letter untouched."
+    arguments:
+      - name: value
+        type: any
+        description: "The text to title-case."
+  - name: compact
+    description: "Drops keys whose value is none."
+    arguments:
+      - name: mapping
+        type: dict[string,any]
+        description: "The mapping to drop none values from."
+  - name: deep_merge
+    description: "Recursive dict merge; `override` wins and nested mappings merge."
+    arguments:
+      - name: base
+        type: dict[string,any]
+        description: "The mapping to merge onto."
+      - name: override
+        type: dict[string,any]
+        description: "Theme overrides layered on top of the project var."
+  - name: flatten
+    description: "One level of flattening: [a, [b, c]] -> [a, b, c]."
+    arguments:
+      - name: items
+        type: list[any]
+        description: "A list of items and/or lists."
+  - name: fail
+    description: "Raises a compiler error prefixed with the calling macro's name."
+    arguments:
+      - name: where
+        type: string
+        description: "Macro name to prefix the message with."
+      - name: message
+        type: string
+        description: "The error message."
+  - name: strip_private
+    description: "Recursively drops every `_`-prefixed key."
+    arguments:
+      - name: value
+        type: any
+        description: "Any structure."

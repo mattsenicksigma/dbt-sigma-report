@@ -1,0 +1,64 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+# The macros only compose JSON, so the whole suite runs against DuckDB with no credentials: it compiles
+# real reports from a seed, then checks them four ways - assertions on the compiled shape, pixel
+# geometry, golden files, and Sigma's published request schema - plus a set of inputs that must be
+# rejected. `--warn-error` turns any dbt deprecation or macro-argument warning into a failure, so the
+# package stays clean as dbt tightens its checks.
+jobs:
+  test-dbt-1x:
+    name: dbt 1.x (DuckDB)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned dependencies
+        run: pip install -r ci/requirements-dbt1.txt
+
+      - name: Script unit tests (export/push against a fake Sigma API, layout, golden, schema validator)
+        run: python -m unittest discover -s scripts -p "test_*.py"
+
+      - name: Integration tests
+        env:
+          PARSE_FLAGS: --warn-error
+          REQUIRE_JSONSCHEMA: "1"
+        run: bash scripts/run_integration_tests_duckdb.sh
+
+  # The same suite on dbt 2.x. This is the job that backs the "supports dbt 2" claim in the README.
+  test-dbt-2x:
+    name: dbt 2.x (DuckDB)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: "3.12"
+
+      - name: Install pinned dependencies
+        run: pip install -r ci/requirements-dbt2.txt
+
+      - name: Script unit tests
+        run: python -m unittest discover -s scripts -p "test_*.py"
+
+      - name: Integration tests
+        env:
+          PARSE_FLAGS: --warn-error
+          REQUIRE_JSONSCHEMA: "1"
+        run: bash scripts/run_integration_tests_duckdb.sh
