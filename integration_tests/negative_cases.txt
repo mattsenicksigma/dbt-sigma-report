@@ -71,3 +71,7 @@ assert_bad_color_by_rejected | sigma_report.treemap_chart: color_by must be 'sca
 assert_progress_bad_mode_rejected | sigma_report.progress: mode must be 'percent' or 'value'
 assert_unknown_setting_rejected | sigma_report.settings: unknown key 'chat_h' in the sigma_report_settings var | {sigma_report_settings: {chat_h: 100}}
 assert_no_room_rejected | leave no room on a
+
+assert_preset_without_kpis_rejected | sigma_report.simple_executive_summary: kpis is required
+assert_statement_without_columns_rejected | sigma_report.simple_statement: columns is required
+assert_bad_facts_rejected | sigma_report.facts_line: facts is a list of [label, value] pairs

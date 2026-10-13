@@ -86,6 +86,14 @@
 {% endmacro %}
 
 
+{# True when some text element's body contains `needle`. #}
+{% macro _text_has(elements, needle) %}
+{% for el in elements %}
+  {% if el.kind == 'text' and needle in el.body %}{% do return(true) %}{% endif %}
+{% endfor %}
+{% do return(false) %}
+{% endmacro %}
+
 {% macro _count(elements, kind) %}
 {% set n = namespace(count=0) %}
 {% for el in elements %}{% if el.kind == kind %}{% set n.count = n.count + 1 %}{% endif %}{% endfor %}
@@ -354,9 +362,30 @@
 {% endmacro %}
 
 
+{% macro _check_presets() %}
+{% set t = sigma_report_integration_tests %}
+{% set c = t._spec_of('preset_executive_summary').contents %}
+{% do t._ok(t._count(c.elements, 'kpi-chart') == 3 and t._count(c.elements, 'line-chart') == 1, 'preset_executive_summary: three KPIs and the headline chart') %}
+{% do t._ok(t._find(c.elements, 'kpi-chart', 'Revenue').comparisonColumn.columnId is string, 'preset_executive_summary: a KPI spec keeps compare_to') %}
+{% do t._ok(t._text_has(c.elements, '- SMB is running below plan'), 'preset_executive_summary: highlights are written as bullets') %}
+
+{% set c = t._spec_of('preset_period_review').contents %}
+{% set revenue = t._find(c.elements, 'kpi-chart', 'Revenue') %}
+{% do t._ok(revenue.timeline.columnId is string and revenue.periodComparison == 'month' and revenue.trend.shape == 'area', 'preset_period_review: every KPI compares the latest period with the one before, with a sparkline') %}
+{% do t._ok(t._find(c.elements, 'kpi-chart', 'Orders').periodComparison == 'month', 'preset_period_review: the period default reaches every KPI') %}
+{% do t._ok(t._count(c.elements, 'line-chart') == 1 and t._count(c.elements, 'bar-chart') == 2, 'preset_period_review: one trend and a bar chart per breakdown') %}
+{% do t._find(c.elements, 'bar-chart', 'Revenue by Segment') %}
+
+{% set c = t._spec_of('preset_statement').contents %}
+{% set table = t._find(c.elements, 'table', 'Line items') %}
+{% do t._ok(table.order | length == 4 and table.sort[0].direction == 'ascending', 'preset_statement: line-item columns and sort') %}
+{% do t._find(c.elements, 'kpi-chart', 'Total due') %}
+{% do t._ok(t._text_has(c.elements, 'Payment terms: net 30.'), 'preset_statement: footer note') %}
+{% endmacro %}
+
 {% macro assert_reports() %}
 {% set t = sigma_report_integration_tests %}
-{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source'] %}
+{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement'] %}
   {% do t._check_report(name) %}
 {% endfor %}
 {% do t._check_simple() %}
@@ -365,6 +394,7 @@
 {% do t._check_long_form() %}
 {% do t._check_flexible() %}
 {% do t._check_leaderboard() %}
+{% do t._check_presets() %}
 {% do t._check_sources() %}
 {{ log('all assertions passed', info=True) }}
 {% endmacro %}

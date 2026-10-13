@@ -7,6 +7,9 @@ A real dbt project that uses the package (`packages.yml: local: ../`) against Du
 | `sigma_sales_simple` | the smallest `simple_dashboard`: one KPI, one chart |
 | `sigma_sales_dashboard` | a full `simple_dashboard`: three KPIs (one against a target), four chart kinds, a sorted detail table; paginates onto a second page |
 | `simple_leaderboard` | ranked horizontal bars per dimension |
+| `preset_executive_summary` | `simple_executive_summary`: three KPIs (one against plan), a headline chart, highlights |
+| `preset_period_review` | `simple_period_review`: period-over-period KPIs with sparklines, a trend, two breakdowns, notes |
+| `preset_statement` | `simple_statement`: facts, line items, a totals band, a footer note |
 | `sigma_sales_report` | the primitives: A4, header and footer panels, a `row` with a `stack`, pivot, calculated column, a chart built on a table, `extend`, `raw`, a per-report theme, two pages |
 | `sigma_sales_from_data_model` | a source that is a table of a Sigma data model (composed by `sigma_sales_model` with `sigma_data_models`) |
 | `sigma_sales_long_form` | content-sized heights: a wrapping title, text in a narrow cell, `rows=`, `h='fill'` |
