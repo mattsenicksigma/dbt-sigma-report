@@ -13,11 +13,11 @@
 
    `format` is a sigma_report.format_*() result applied to the value. `trend=true` (with a timeline)
    shows a sparkline under the number. `direction` says which way is good: 'higher', 'lower' or 'none'. #}
-{% macro kpi(source, value, name=none, key=none, h=96, format=none, compare_to=none, compare_label=none, timeline=none, period='month', trend=false, direction='higher', description=none, style=none) %}
+{% macro kpi(source, value, name=none, key=none, h=none, format=none, compare_to=none, compare_label=none, timeline=none, period='month', trend=false, direction='higher', description=none, style=none) %}
 {% set source = sigma_report.resolve_source(source, 'kpi') %}
 {% set value_field = sigma_report.normalize_field(value, source, 'kpi') %}
 {% set title = name or value_field.get('name') %}
-{% set el = sigma_report.new_element('kpi-chart', 'kpi', key, title or value_field['formula'], h) %}
+{% set el = sigma_report.new_element('kpi-chart', 'kpi', key, title or value_field['formula'], sigma_report.setting('kpi_h', h)) %}
 {% set cols = [] %}
 {% if format is not none %}
   {% do value_field.update({"format": format}) %}

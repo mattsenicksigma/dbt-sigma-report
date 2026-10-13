@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export the reports compiled by dbt-sigma-report from manifest.json, and optionally push them to Sigma.
 
-    python scripts/export_reports.py --out sigma_reports/             # write one JSON file per report
+    python scripts/export_reports.py --out sigma_reports/             # one JSON file per report (+ <model>.schedules.json)
     python scripts/export_reports.py --check                          # offline sanity checks only
     python scripts/export_reports.py --push --dry-run                 # validate against your Sigma org
     python scripts/export_reports.py --push                           # create / update the reports
@@ -18,6 +18,11 @@ Pushing needs API credentials (https://help.sigmacomputing.com/docs/generate-api
 A report whose spec has a `reportId` is updated in place (`PUT /v2/reports/{id}/contents`, a full
 replace of its contents); otherwise a new report is created (`POST /v2/reports`). `--dry-run` sends
 `dryRun: true` to the create endpoint, which validates formulas, sources and layout without saving.
+
+A spec's `schedules` (from `sigma_report.schedule`) are scheduled PDF exports. Sigma keeps them outside the
+report's contents, so after the report is created or updated they are created or updated one by one
+(`/v2/reports/{id}/schedules`), matched by name. Schedules are never deleted, and a dry run does not touch
+them: Sigma has no dry run for schedules.
 """
 import argparse
 import json
@@ -52,8 +57,10 @@ def load_reports(manifest_path, select=None):
 
 
 def request_body(spec):
-    """The `POST /v2/reports` body: the spec without the package's own `reportId` bookkeeping."""
-    return {k: v for k, v in spec.items() if k != "reportId"}
+    """The `POST /v2/reports` body: the spec without the package's own bookkeeping - `reportId`; `schedules`,
+    which Sigma keeps outside a report's contents (applied separately, see `apply_schedules`); and any
+    `_`-prefixed key such as `_overlap_ok`, which only the geometry check reads."""
+    return {k: v for k, v in spec.items() if k not in ("reportId", "schedules") and not k.startswith("_")}
 
 
 def check_spec(name, spec, for_push=False):
@@ -82,6 +89,20 @@ def check_spec(name, spec, for_push=False):
             problems.append("panel %s refers to an unknown page" % panel["id"])
     if any(k.startswith("_") for e in contents.get("elements", []) for k in e):
         problems.append("a private `_` key leaked into an element")
+    titles = []
+    for schedule in spec.get("schedules", []):
+        config = schedule.get("configV2") or {}
+        title = config.get("title")
+        if not title or title in titles:
+            problems.append("schedules need distinct, non-empty names")
+        titles.append(title)
+        if not schedule.get("target"):
+            problems.append("schedule '%s' has no recipients" % title)
+        if len((schedule.get("schedule") or {}).get("cronSpec", "").split()) != 5:
+            problems.append("schedule '%s' needs a 5-field cron expression" % title)
+        condition = (config.get("conditionOptions") or {}).get("condition") or {}
+        if condition.get("elementId") and condition["elementId"] not in element_ids:
+            problems.append("schedule '%s' tests an element that is not in the report" % title)
     if for_push:
         if not spec.get("folderId") and not spec.get("reportId"):
             problems.append("no folderId (set the `sigma_folder_id` var or pass folder_id=)")
@@ -132,14 +153,57 @@ class SigmaClient:
                           body={"contents": spec["contents"]}, token=self.token)
 
 
+    def schedules(self, report_id):
+        """Every scheduled export on a report, following pagination."""
+        found, page = [], None
+        while True:
+            query = "?" + urllib.parse.urlencode({"page": page}) if page else ""
+            reply = self._call("GET", "/v2/reports/%s/schedules%s" % (report_id, query), token=self.token)
+            found.extend(reply.get("entries", []))
+            page = reply.get("nextPage")
+            if not page:
+                return found
+
+    def create_schedule(self, report_id, schedule):
+        return self._call("POST", "/v2/reports/%s/schedules" % report_id, body=schedule, token=self.token)
+
+    def update_schedule(self, report_id, schedule_id, schedule):
+        return self._call("PATCH", "/v2/reports/%s/schedules/%s" % (report_id, schedule_id),
+                          body=schedule, token=self.token)
+
+
+def apply_schedules(name, report_id, schedules, client):
+    """Create or update a report's scheduled exports. A schedule is matched to Sigma's by its title; the
+    ones already there that the spec doesn't mention are left alone (never deleted)."""
+    existing = {}
+    for entry in client.schedules(report_id):
+        existing.setdefault(entry["configV2"]["title"], entry["scheduledNotificationId"])
+    for schedule in schedules:
+        title = schedule["configV2"]["title"]
+        if title in existing:
+            client.update_schedule(report_id, existing[title], schedule)
+            print("%s schedule updated: %s" % (name, title))
+        else:
+            client.create_schedule(report_id, schedule)
+            print("%s schedule created: %s" % (name, title))
+
+
 def push(reports, dry_run, client):
     for name, spec in sorted(reports.items()):
+        schedules = spec.get("schedules", [])
         if dry_run or not spec.get("reportId"):
             reply = client.create(spec, dry_run)
             print("%s %s: %s" % (name, "validated" if dry_run else "created", reply.get("url") or reply.get("reportId") or "ok"))
+            report_id = reply.get("reportId")
         else:
             client.update(spec["reportId"], spec)
             print("%s updated: %s" % (name, spec["reportId"]))
+            report_id = spec["reportId"]
+        if dry_run:
+            for schedule in schedules:
+                print("%s schedule (not validated by a dry run): %s" % (name, schedule["configV2"]["title"]))
+        elif schedules:
+            apply_schedules(name, report_id, schedules, client)
 
 
 def main(argv=None):
@@ -173,6 +237,12 @@ def main(argv=None):
                 json.dump(request_body(spec), handle, indent=2, sort_keys=True)
                 handle.write("\n")
             print("wrote " + path)
+            if spec.get("schedules"):
+                path = os.path.join(args.out, name + ".schedules.json")
+                with open(path, "w") as handle:
+                    json.dump(spec["schedules"], handle, indent=2, sort_keys=True)
+                    handle.write("\n")
+                print("wrote " + path)
     if args.check:
         print("%d report(s) passed the offline checks" % len(reports))
     if args.push:

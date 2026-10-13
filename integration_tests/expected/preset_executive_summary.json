@@ -7,7 +7,7 @@
     },
     "elements": [
       {
-        "body": "# Executive summary\n\n<span style=\"color: #737373\">Bookings against plan</span>",
+        "body": "<span style=\"font-size: 28px\">**Executive summary**</span>\n\n<span style=\"color: #737373\">Bookings against plan</span>",
         "id": "7661218310",
         "kind": "text",
         "verticalAlign": "center"
@@ -237,7 +237,7 @@
         }
       },
       {
-        "body": "### Highlights",
+        "body": "<span style=\"font-size: 20px\">**Highlights**</span>",
         "id": "a05b08ee58",
         "kind": "text",
         "verticalAlign": "center"
@@ -250,7 +250,7 @@
       }
     ],
     "kind": "report",
-    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"bb02ca6ef6\">\n  <Element elementId=\"7661218310\" x=\"0\" y=\"0\" width=\"720\" height=\"64\"/>\n  <Element elementId=\"879cca4cfc\" x=\"0\" y=\"80\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"108\" width=\"229\" height=\"104\"/>\n  <Element elementId=\"e23575c8c7\" x=\"245\" y=\"108\" width=\"229\" height=\"104\"/>\n  <Element elementId=\"68d491f971\" x=\"490\" y=\"108\" width=\"230\" height=\"104\"/>\n  <Element elementId=\"0dff74f759\" x=\"0\" y=\"228\" width=\"720\" height=\"280\"/>\n  <Element elementId=\"a05b08ee58\" x=\"0\" y=\"524\" width=\"720\" height=\"32\"/>\n  <Element elementId=\"a4a6c953f0\" x=\"0\" y=\"572\" width=\"720\" height=\"56\"/>\n</Page>\n",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"bb02ca6ef6\">\n  <Element elementId=\"7661218310\" x=\"0\" y=\"0\" width=\"720\" height=\"75\"/>\n  <Element elementId=\"879cca4cfc\" x=\"0\" y=\"91\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"119\" width=\"229\" height=\"104\"/>\n  <Element elementId=\"e23575c8c7\" x=\"245\" y=\"119\" width=\"229\" height=\"104\"/>\n  <Element elementId=\"68d491f971\" x=\"490\" y=\"119\" width=\"230\" height=\"104\"/>\n  <Element elementId=\"0dff74f759\" x=\"0\" y=\"239\" width=\"720\" height=\"280\"/>\n  <Element elementId=\"a05b08ee58\" x=\"0\" y=\"535\" width=\"720\" height=\"39\"/>\n  <Element elementId=\"a4a6c953f0\" x=\"0\" y=\"590\" width=\"720\" height=\"56\"/>\n</Page>\n",
     "pages": [
       {
         "id": "bb02ca6ef6",
@@ -266,7 +266,7 @@
           "categoricalScheme": "superbloom",
           "colorOverrides": [
             {
-              "color": "#fafafa",
+              "color": "#ffffff",
               "name": "backgroundCanvas"
             }
           ],

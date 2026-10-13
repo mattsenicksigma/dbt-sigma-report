@@ -7,7 +7,7 @@
     },
     "elements": [
       {
-        "body": "# Every order",
+        "body": "<span style=\"font-size: 28px\">**Every order**</span>",
         "id": "7af7f3ea68",
         "kind": "text",
         "verticalAlign": "center"
@@ -67,7 +67,7 @@
         }
       },
       {
-        "body": "### Revenue by region and segment",
+        "body": "<span style=\"font-size: 20px\">**Revenue by region and segment**</span>",
         "id": "667e64bb42",
         "kind": "text",
         "verticalAlign": "center"
@@ -131,7 +131,7 @@
       }
     ],
     "kind": "report",
-    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"346279bf8a\">\n  <Element elementId=\"7af7f3ea68\" x=\"0\" y=\"0\" width=\"720\" height=\"64\"/>\n  <Element elementId=\"2766a33588\" x=\"0\" y=\"80\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"3f0a211ee4\" x=\"0\" y=\"108\" width=\"720\" height=\"200\" flow=\"paginated\"/>\n</Page>\n<Page id=\"fcc2131f1b\">\n  <Element elementId=\"667e64bb42\" x=\"0\" y=\"0\" width=\"720\" height=\"32\"/>\n  <Element elementId=\"9b884708b5\" x=\"0\" y=\"48\" width=\"720\" height=\"200\" flow=\"paginated\"/>\n</Page>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"7076efdc78\" x=\"602\" y=\"0\" width=\"118\" height=\"24\"/>\n</Panel>\n",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"346279bf8a\">\n  <Element elementId=\"7af7f3ea68\" x=\"0\" y=\"0\" width=\"720\" height=\"50\"/>\n  <Element elementId=\"2766a33588\" x=\"0\" y=\"66\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"3f0a211ee4\" x=\"0\" y=\"94\" width=\"720\" height=\"200\" flow=\"paginated\"/>\n</Page>\n<Page id=\"fcc2131f1b\">\n  <Element elementId=\"667e64bb42\" x=\"0\" y=\"0\" width=\"720\" height=\"39\"/>\n  <Element elementId=\"9b884708b5\" x=\"0\" y=\"55\" width=\"720\" height=\"200\" flow=\"paginated\"/>\n</Page>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"7076efdc78\" x=\"602\" y=\"0\" width=\"118\" height=\"24\"/>\n</Panel>\n",
     "pages": [
       {
         "id": "346279bf8a",
@@ -165,7 +165,7 @@
           "categoricalScheme": "superbloom",
           "colorOverrides": [
             {
-              "color": "#fafafa",
+              "color": "#ffffff",
               "name": "backgroundCanvas"
             }
           ],

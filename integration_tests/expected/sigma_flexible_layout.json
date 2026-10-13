@@ -1,0 +1,1007 @@
+{
+  "contents": {
+    "config": {
+      "margin": 48,
+      "pageHeight": 1056,
+      "pageWidth": 816
+    },
+    "elements": [
+      {
+        "body": "<span style=\"font-size: 28px\">**Rows and stacks nest**</span>\n\n<span style=\"color: #737373\">A stack of KPIs beside a row of charts, one of which is a stack</span>",
+        "id": "0067fa9a6f",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "direction": "horizontal",
+        "id": "dec9ab074a",
+        "kind": "divider",
+        "style": {
+          "color": "#e5e5e5",
+          "strokeStyle": "solid",
+          "width": 1
+        }
+      },
+      {
+        "body": "**DRAFT**",
+        "id": "4656f5c67e",
+        "kind": "text",
+        "verticalAlign": "top"
+      },
+      {
+        "columns": [
+          {
+            "formula": "Sum([Amount])",
+            "id": "9dab687333"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "0e4970f085"
+          }
+        ],
+        "id": "6272802a46",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Revenue"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "9dab687333",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "Count()",
+            "id": "f696a95af8"
+          }
+        ],
+        "id": "01b65d38d1",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Orders"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "f696a95af8",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "Sum([Amount])",
+            "id": "8e9b232ba0"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "e274e08821"
+          },
+          {
+            "formula": "Sum([Target Amount])",
+            "id": "153b35caea"
+          },
+          {
+            "formula": "[stg_orders/Target Amount]",
+            "id": "58d7d3b288"
+          }
+        ],
+        "comparison": {
+          "colorBad": "#c10007",
+          "colorGood": "#008236",
+          "direction": "higher",
+          "display": "percentage",
+          "label": "plan",
+          "labelColor": "#737373"
+        },
+        "comparisonColumn": {
+          "columnId": "153b35caea"
+        },
+        "id": "21b8195f7b",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Vs plan"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "8e9b232ba0",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#4f39f6"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "729cb99ee4"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "c0cd2b33fa"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "bbe893d382"
+          }
+        ],
+        "id": "18563228bb",
+        "kind": "bar-chart",
+        "name": "By region",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "729cb99ee4",
+          "sort": {
+            "by": "c0cd2b33fa",
+            "direction": "descending"
+          }
+        },
+        "yAxis": {
+          "columnIds": [
+            "c0cd2b33fa"
+          ]
+        }
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#4f39f6"
+        },
+        "columns": [
+          {
+            "formula": "DateTrunc(\"month\", [Order Date])",
+            "id": "f71bca388a"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "41ea09c7c4"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "c73f513dc5"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "684e8d88ae"
+          }
+        ],
+        "id": "0683cf9f6e",
+        "kind": "line-chart",
+        "name": "By month",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "f71bca388a"
+        },
+        "yAxis": {
+          "columnIds": [
+            "c73f513dc5"
+          ]
+        }
+      },
+      {
+        "color": {
+          "columnId": "953019acb4"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Segment]",
+            "id": "953019acb4"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "595a5a5949"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "bd64cc8d8b"
+          }
+        ],
+        "dataLabel": {
+          "labelDisplay": "percent",
+          "labels": "shown"
+        },
+        "id": "047fe64bd4",
+        "kind": "donut-chart",
+        "name": "By segment",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "columnId": "595a5a5949"
+        }
+      },
+      {
+        "body": "<span style=\"font-size: 20px\">**Heights share what is left**</span>",
+        "id": "2f6b335f86",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#4f39f6"
+        },
+        "columns": [
+          {
+            "formula": "DateTrunc(\"month\", [Order Date])",
+            "id": "ca6fc62ecc"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "5954ce9587"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "0a429339e9"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "f89e148129"
+          },
+          {
+            "formula": "Sum([Target Amount])",
+            "id": "570ae2eff3"
+          },
+          {
+            "formula": "[stg_orders/Target Amount]",
+            "id": "10d8313d3a"
+          }
+        ],
+        "id": "7ca5b67201",
+        "kind": "combo-chart",
+        "name": "Revenue and plan",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "ca6fc62ecc"
+        },
+        "yAxis": {
+          "columnIds": [
+            {
+              "columnId": "0a429339e9",
+              "type": "bar"
+            },
+            {
+              "columnId": "570ae2eff3",
+              "type": "line"
+            }
+          ]
+        },
+        "yAxis2": {
+          "columnIds": [
+            "570ae2eff3"
+          ]
+        }
+      },
+      {
+        "category": {
+          "columnId": "cadc04ae37"
+        },
+        "color": {
+          "by": "scale",
+          "column": "f77d1edd80"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "cadc04ae37"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "387e7e6c89"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "0b8924cd6f"
+          },
+          {
+            "formula": "Sum([Target Amount])",
+            "id": "f77d1edd80"
+          },
+          {
+            "formula": "[stg_orders/Target Amount]",
+            "id": "68a2545ef1"
+          }
+        ],
+        "id": "18ad08f0e3",
+        "kind": "treemap-chart",
+        "name": "Mix",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": [
+          {
+            "columnId": "387e7e6c89"
+          }
+        ]
+      },
+      {
+        "body": "Heights above share the room left on the page 2:1.",
+        "id": "7781c1060d",
+        "kind": "text",
+        "verticalAlign": "top"
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#4f39f6"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "e9f524fe2d"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "934ea78057"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "4bca97b6ee"
+          }
+        ],
+        "id": "ca9ddeca41",
+        "kind": "waterfall-chart",
+        "name": "Waterfall",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "e9f524fe2d"
+        },
+        "yAxis": {
+          "columnIds": [
+            "934ea78057"
+          ]
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "[stg_orders/Segment]",
+            "id": "ccf2814475"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "415fdd0a9d"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "b1ef147b9d"
+          }
+        ],
+        "id": "3734c86fe8",
+        "kind": "funnel-chart",
+        "name": "Funnel",
+        "series": {
+          "columnId": "415fdd0a9d"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "stage": {
+          "columnId": "ccf2814475"
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "Sum([Amount])",
+            "id": "1229fe5623"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "0fcb5a792d"
+          },
+          {
+            "formula": "0",
+            "id": "9e570d0cf8"
+          },
+          {
+            "formula": "Sum([Target Amount])",
+            "id": "5529df38e7"
+          },
+          {
+            "formula": "[stg_orders/Target Amount]",
+            "id": "5a085a09fe"
+          }
+        ],
+        "id": "0bd78db3a3",
+        "kind": "gauge-chart",
+        "maximum": {
+          "columnId": "5529df38e7"
+        },
+        "minimum": {
+          "columnId": "9e570d0cf8"
+        },
+        "name": "Attainment",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "columnId": "1229fe5623"
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "[stg_orders/Segment]",
+            "id": "8e612bb2b2"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "384f39f79d"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "3fb1a0c8a3"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "7643c057d1"
+          }
+        ],
+        "id": "72a58302ac",
+        "kind": "sankey-chart",
+        "name": "Flow",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "stages": [
+          {
+            "columnId": "8e612bb2b2"
+          },
+          {
+            "columnId": "384f39f79d"
+          }
+        ],
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "columnId": "3fb1a0c8a3"
+        }
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#4f39f6"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Segment]",
+            "id": "cd3d1819f0"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "359518e7b0"
+          }
+        ],
+        "id": "38f9e3498b",
+        "kind": "box-chart",
+        "name": "Order sizes",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "cd3d1819f0"
+        },
+        "yAxis": {
+          "columnIds": [
+            "359518e7b0"
+          ]
+        }
+      },
+      {
+        "color": {
+          "by": "scale",
+          "column": "110a59fa7b"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "9a6be3b398"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "110a59fa7b"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "4eb0cdaabf"
+          }
+        ],
+        "id": "cab23e8650",
+        "kind": "region-map",
+        "name": "Regions",
+        "region": {
+          "columnId": "9a6be3b398",
+          "regionType": "us-state"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        }
+      },
+      {
+        "id": "892c811903",
+        "kind": "progress",
+        "max": "100",
+        "min": "0",
+        "mode": "percent",
+        "shape": "bar",
+        "value": "72"
+      },
+      {
+        "id": "6c15d6f94c",
+        "kind": "embed",
+        "url": "https://example.com/definitions"
+      },
+      {
+        "body": "<span style=\"font-size: 20px\">**Every order, five to a page**</span>",
+        "id": "bb9ba290eb",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "columns": [
+          {
+            "formula": "[stg_orders/Order Id]",
+            "id": "f8d5418420"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "01c946dd71"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "50b834a116"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "9a83393d93"
+          },
+          {
+            "formula": "RowNumber()",
+            "hidden": true,
+            "id": "c2034139c1",
+            "name": "Row"
+          }
+        ],
+        "filters": [
+          {
+            "columnId": "c2034139c1",
+            "id": "102f476bb3",
+            "kind": "number-range",
+            "max": 5,
+            "min": 1
+          }
+        ],
+        "id": "ad836cb75a",
+        "kind": "table",
+        "name": "Orders (page 1 of 3)",
+        "order": [
+          "f8d5418420",
+          "01c946dd71",
+          "50b834a116",
+          "9a83393d93"
+        ],
+        "sort": [
+          {
+            "columnId": "f8d5418420",
+            "direction": "ascending"
+          }
+        ],
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "[stg_orders/Order Id]",
+            "id": "e095fd14ce"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "1c5326265c"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "accc8e17a9"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "7e0b79da60"
+          },
+          {
+            "formula": "RowNumber()",
+            "hidden": true,
+            "id": "c731d58577",
+            "name": "Row"
+          }
+        ],
+        "filters": [
+          {
+            "columnId": "c731d58577",
+            "id": "2cbb9bd2d0",
+            "kind": "number-range",
+            "max": 10,
+            "min": 6
+          }
+        ],
+        "id": "9ec2a1c7e7",
+        "kind": "table",
+        "name": "Orders (page 2 of 3)",
+        "order": [
+          "e095fd14ce",
+          "1c5326265c",
+          "accc8e17a9",
+          "7e0b79da60"
+        ],
+        "sort": [
+          {
+            "columnId": "e095fd14ce",
+            "direction": "ascending"
+          }
+        ],
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "[stg_orders/Order Id]",
+            "id": "9e8718dbfc"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "7f0541cac5"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "094d856f00"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "d1c02996e7"
+          },
+          {
+            "formula": "RowNumber()",
+            "hidden": true,
+            "id": "591b4559f3",
+            "name": "Row"
+          }
+        ],
+        "filters": [
+          {
+            "columnId": "591b4559f3",
+            "id": "db12be8a8f",
+            "kind": "number-range",
+            "max": 15,
+            "min": 11
+          }
+        ],
+        "id": "af23592dd6",
+        "kind": "table",
+        "name": "Orders (page 3 of 3)",
+        "order": [
+          "9e8718dbfc",
+          "7f0541cac5",
+          "094d856f00",
+          "d1c02996e7"
+        ],
+        "sort": [
+          {
+            "columnId": "9e8718dbfc",
+            "direction": "ascending"
+          }
+        ],
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        }
+      }
+    ],
+    "kind": "report",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"b70073806d\">\n  <Element elementId=\"0067fa9a6f\" x=\"0\" y=\"0\" width=\"720\" height=\"75\"/>\n  <Element elementId=\"dec9ab074a\" x=\"0\" y=\"91\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"4656f5c67e\" x=\"520\" y=\"0\" width=\"200\" height=\"28\"/>\n  <Element elementId=\"6272802a46\" x=\"0\" y=\"119\" width=\"176\" height=\"96\"/>\n  <Element elementId=\"01b65d38d1\" x=\"0\" y=\"231\" width=\"176\" height=\"96\"/>\n  <Element elementId=\"21b8195f7b\" x=\"0\" y=\"343\" width=\"176\" height=\"96\"/>\n  <Element elementId=\"18563228bb\" x=\"192\" y=\"119\" width=\"307\" height=\"536\"/>\n  <Element elementId=\"0683cf9f6e\" x=\"515\" y=\"119\" width=\"205\" height=\"260\"/>\n  <Element elementId=\"047fe64bd4\" x=\"515\" y=\"395\" width=\"205\" height=\"260\"/>\n</Page>\n<Page id=\"ca42b33167\">\n  <Element elementId=\"2f6b335f86\" x=\"0\" y=\"0\" width=\"720\" height=\"39\"/>\n  <Element elementId=\"7ca5b67201\" x=\"0\" y=\"55\" width=\"720\" height=\"474\"/>\n  <Element elementId=\"18ad08f0e3\" x=\"0\" y=\"545\" width=\"720\" height=\"368\"/>\n  <Element elementId=\"7781c1060d\" x=\"0\" y=\"929\" width=\"720\" height=\"31\"/>\n</Page>\n<Page id=\"dc5e9fa4ed\">\n  <Element elementId=\"ca9ddeca41\" x=\"0\" y=\"0\" width=\"352\" height=\"260\"/>\n  <Element elementId=\"3734c86fe8\" x=\"368\" y=\"0\" width=\"352\" height=\"260\"/>\n  <Element elementId=\"0bd78db3a3\" x=\"0\" y=\"276\" width=\"352\" height=\"260\"/>\n  <Element elementId=\"72a58302ac\" x=\"368\" y=\"276\" width=\"352\" height=\"260\"/>\n  <Element elementId=\"38f9e3498b\" x=\"0\" y=\"552\" width=\"352\" height=\"320\"/>\n  <Element elementId=\"cab23e8650\" x=\"368\" y=\"552\" width=\"352\" height=\"320\"/>\n</Page>\n<Page id=\"16bb951088\">\n  <Element elementId=\"892c811903\" x=\"0\" y=\"0\" width=\"352\" height=\"180\"/>\n  <Element elementId=\"6c15d6f94c\" x=\"368\" y=\"0\" width=\"352\" height=\"180\"/>\n</Page>\n<Page id=\"d4a567460e\">\n  <Element elementId=\"bb9ba290eb\" x=\"0\" y=\"0\" width=\"720\" height=\"39\"/>\n  <Element elementId=\"ad836cb75a\" x=\"0\" y=\"55\" width=\"720\" height=\"230\"/>\n</Page>\n<Page id=\"6d39443663\">\n  <Element elementId=\"9ec2a1c7e7\" x=\"0\" y=\"0\" width=\"720\" height=\"230\"/>\n</Page>\n<Page id=\"1664f3692e\">\n  <Element elementId=\"af23592dd6\" x=\"0\" y=\"0\" width=\"720\" height=\"230\"/>\n</Page>\n",
+    "pages": [
+      {
+        "id": "b70073806d",
+        "name": "Nesting"
+      },
+      {
+        "id": "ca42b33167",
+        "name": "Flexible"
+      },
+      {
+        "id": "dc5e9fa4ed",
+        "name": "Chart family"
+      },
+      {
+        "id": "16bb951088",
+        "name": "Chart family (2)"
+      },
+      {
+        "id": "d4a567460e",
+        "name": "All orders"
+      },
+      {
+        "id": "6d39443663",
+        "name": "All orders (2)"
+      },
+      {
+        "id": "1664f3692e",
+        "name": "All orders (3)"
+      }
+    ],
+    "schemaVersion": 1,
+    "settings": {
+      "theme": {
+        "name": "Light",
+        "overrides": {
+          "borderRadius": "round",
+          "categoricalScheme": "superbloom",
+          "colorOverrides": [
+            {
+              "color": "#ffffff",
+              "name": "backgroundCanvas"
+            }
+          ],
+          "colors": {
+            "danger": "#c10007",
+            "highlight": "#1A70F1",
+            "success": "#008236",
+            "surface": "#ffffff",
+            "text": "#0a0a0a",
+            "warning": "#bb4d00"
+          },
+          "fonts": {
+            "dataFont": "Inter",
+            "textFont": "Inter"
+          }
+        }
+      }
+    }
+  },
+  "folderId": "00000000-0000-0000-0000-000000000002",
+  "name": "Flexible layout"
+}

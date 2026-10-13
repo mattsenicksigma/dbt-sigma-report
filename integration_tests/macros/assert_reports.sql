@@ -44,7 +44,7 @@
 {% if value is mapping %}
   {% for k in value.keys() %}
     {% if k == 'columnId' and value[k] is string %}{% do acc.append(value[k]) %}
-    {% elif k == 'columnIds' %}{% for c in value[k] %}{% do acc.append(c) %}{% endfor %}
+    {% elif k == 'columnIds' %}{% for c in value[k] %}{% do acc.append(c['columnId'] if c is mapping else c) %}{% endfor %}
     {% elif k in ['order', 'values'] and value[k] is sequence and value[k] is not string %}{% for c in value[k] %}{% if c is string %}{% do acc.append(c) %}{% endif %}{% endfor %}
     {% elif k == 'column' and value[k] is string %}{% do acc.append(value[k]) %}
     {% elif k == 'by' and value.get('direction') %}{% do acc.append(value[k]) %}
@@ -59,12 +59,12 @@
 {% endmacro %}
 
 
-{# First element of `kind` whose title text (or, for a plain-string name, the name) matches `title`;
+{# First element of `kind` whose title text (or, for a plain-string name, the name; a button's `text`) matches `title`;
    `title` none matches any. #}
 {% macro _find(elements, kind, title) %}
 {% for el in elements %}
   {% if el.kind == kind %}
-    {% set shown = el.name.text if el.get('name') is mapping else el.get('name') %}
+    {% set shown = el.name.text if el.get('name') is mapping else (el.get('name') if el.get('name') is not none else el.get('text')) %}
     {% set shown = shown if shown is not none else '' %}
     {% if title is none or shown == title %}
       {% do return(el) %}
@@ -72,6 +72,17 @@
   {% endif %}
 {% endfor %}
 {% do exceptions.raise_compiler_error('ASSERTION FAILED: no ' ~ kind ~ ' titled ' ~ title) %}
+{% endmacro %}
+
+
+{# The text element whose body contains `snippet` (text elements have no name to match on). #}
+{% macro _find_text(elements, snippet) %}
+{% for el in elements %}
+  {% if el.kind == 'text' and snippet in el.body %}
+    {% do return(el) %}
+  {% endif %}
+{% endfor %}
+{% do exceptions.raise_compiler_error('ASSERTION FAILED: no text containing ' ~ snippet) %}
 {% endmacro %}
 
 
@@ -123,7 +134,8 @@
 {% set keys = [] %}
 {% do t._all_keys(spec, keys) %}
 {% for k in keys %}
-  {% do t._ok(not k.startswith('_'), where ~ 'private key ' ~ k ~ ' leaked into the spec') %}
+  {# `_overlap_ok` is deliberate top-level bookkeeping for the geometry check; request_body() strips it #}
+  {% do t._ok(not k.startswith('_') or k == '_overlap_ok', where ~ 'private key ' ~ k ~ ' leaked into the spec') %}
 {% endfor %}
 {% do t._ok('__color:' not in (spec | tojson), where ~ 'every color marker was resolved') %}
 
@@ -236,6 +248,35 @@
 {% endmacro %}
 
 
+{# The `height="N"` (or `y`, `width`) the layout gives an element. #}
+{% macro _box(layout, element_id, attribute) %}
+{% set segment = layout.split('elementId="' ~ element_id ~ '"')[1].split('/>')[0] %}
+{% do return(segment.split(' ' ~ attribute ~ '="')[1].split('"')[0] | int) %}
+{% endmacro %}
+
+
+{% macro _check_long_form() %}
+{% set t = sigma_report_integration_tests %}
+{% set c = t._spec_of('sigma_sales_long_form').contents %}
+{% set title = t._find(c.elements, 'text', none) %}
+{% do t._ok('Quarterly sales performance review' in title.body and 'font-size: 28px' in title.body, 'sigma_sales_long_form: titles are 28px bold spans, not markdown H1s') %}
+{# a title that wraps takes more room than one that does not: sized from its content, not a fixed 64px #}
+{% do t._ok(t._box(c.layout, title.id, 'height') >= 150, 'sigma_sales_long_form: a long title and its subtitle get the height they need (' ~ t._box(c.layout, title.id, 'height') ~ 'px)') %}
+{# the same text in a narrow cell is taller than in a wide one, and the row stretches its neighbour to match #}
+{% set narrow = t._find_text(c.elements, 'Revenue is summed') %}
+{% set wide = t._find_text(c.elements, 'Short note.') %}
+{% set kpi = t._find(c.elements, 'kpi-chart', 'Revenue') %}
+{% do t._ok(t._box(c.layout, narrow.id, 'height') > 100 and t._box(c.layout, wide.id, 'height') < 40, 'sigma_sales_long_form: text height follows the width it is laid out at') %}
+{% do t._ok(t._box(c.layout, kpi.id, 'height') == t._box(c.layout, narrow.id, 'height'), 'sigma_sales_long_form: a row is as tall as its tallest cell') %}
+{# a table is a window of `rows` rows: 130px of chrome (title, header, summary bar) + 20px a row, and `fill` takes the rest of the page #}
+{% set top = t._find(c.elements, 'table', 'Top orders') %}
+{% do t._ok(t._box(c.layout, top.id, 'height') == 230, 'sigma_sales_long_form: rows=5 gives a 230px table') %}
+{% set all = t._find(c.elements, 'table', 'All orders') %}
+{% do t._ok(t._box(c.layout, all.id, 'y') + t._box(c.layout, all.id, 'height') == 960, 'sigma_sales_long_form: h=fill runs to the bottom of the content area') %}
+{% do t._ok(c.pages | map(attribute='name') | list == ['Overview', 'Full list'], 'sigma_sales_long_form: both pages, nothing spilled') %}
+{% endmacro %}
+
+
 {% macro _check_leaderboard() %}
 {% set t = sigma_report_integration_tests %}
 {% set c = t._spec_of('simple_leaderboard').contents %}
@@ -281,6 +322,83 @@
 {% endmacro %}
 
 
+{% macro _check_flexible() %}
+{% set t = sigma_report_integration_tests %}
+{% set spec = t._spec_of('sigma_flexible_layout') %}
+{% set c = spec.contents %}
+{% set pages = c.pages | map(attribute='name') | list %}
+{% do t._ok(pages == ['Nesting', 'Flexible', 'Chart family', 'Chart family (2)', 'All orders', 'All orders (2)', 'All orders (3)'], 'sigma_flexible_layout: pages ' ~ pages) %}
+{# rows and stacks nest: the KPI stack sits left of the chart row, and the inner stack's two charts share a cell #}
+{% set revenue = t._find(c.elements, 'kpi-chart', 'Revenue') %}
+{% set region = t._find(c.elements, 'bar-chart', 'By region') %}
+{% set month = t._find(c.elements, 'line-chart', 'By month') %}
+{% set segment = t._find(c.elements, 'donut-chart', 'By segment') %}
+{% do t._ok(t._box(c.layout, revenue.id, 'x') == 0 and t._box(c.layout, region.id, 'x') > t._box(c.layout, revenue.id, 'width'), 'sigma_flexible_layout: the chart row sits to the right of the KPI stack') %}
+{% do t._ok(t._box(c.layout, month.id, 'x') == t._box(c.layout, segment.id, 'x') and t._box(c.layout, segment.id, 'y') > t._box(c.layout, month.id, 'y'), 'sigma_flexible_layout: a stack inside a row inside a row') %}
+{# the row stretches its cells: the bar chart is as tall as the two stacked charts and their gap #}
+{% do t._ok(t._box(c.layout, region.id, 'height') == t._box(c.layout, month.id, 'height') + 16 + t._box(c.layout, segment.id, 'height'), 'sigma_flexible_layout: a row gives every cell the full height') %}
+{# at(): pinned, and flagged as allowed to overlap #}
+{% set stamp = t._find_text(c.elements, 'DRAFT') %}
+{% do t._ok(t._box(c.layout, stamp.id, 'x') == 520 and t._box(c.layout, stamp.id, 'width') == 200, 'sigma_flexible_layout: at() pins an element') %}
+{% do t._ok(spec['_overlap_ok'] == [stamp.id], 'sigma_flexible_layout: an overlapping at() is recorded for the geometry check') %}
+{# flexible heights: the stack runs to the bottom of the page and the flex children split the extra 2:1 #}
+{% set big = t._find(c.elements, 'combo-chart', 'Revenue and plan') %}
+{% set small = t._find(c.elements, 'treemap-chart', 'Mix') %}
+{% set note = t._find_text(c.elements, 'Heights above share') %}
+{% do t._ok(t._box(c.layout, note.id, 'y') + t._box(c.layout, note.id, 'height') == 960, 'sigma_flexible_layout: a flexible block takes the rest of the page') %}
+{% set big_extra = t._box(c.layout, big.id, 'height') - 260 %}
+{% set small_extra = t._box(c.layout, small.id, 'height') - 260 %}
+{% do t._ok((big_extra - 2 * small_extra) | abs <= 2, 'sigma_flexible_layout: flex weights share the extra height 2:1 (' ~ big_extra ~ ' vs ' ~ small_extra ~ ')') %}
+{# the combo chart draws its series with the types asked for #}
+{% do t._ok(big.yAxis.columnIds | map(attribute='type') | list == ['bar', 'line'], 'sigma_flexible_layout: combo series types') %}
+{% do t._ok(big.yAxis2.columnIds == [big.yAxis.columnIds[1].columnId], 'sigma_flexible_layout: the second measure is on the secondary axis') %}
+{# the chart family #}
+{% for kind in ['waterfall-chart', 'funnel-chart', 'gauge-chart', 'sankey-chart', 'box-chart', 'region-map', 'progress', 'embed', 'treemap-chart', 'combo-chart'] %}
+  {% do t._ok(t._count(c.elements, kind) == 1, 'sigma_flexible_layout: one ' ~ kind) %}
+{% endfor %}
+{% set gauge = t._find(c.elements, 'gauge-chart', 'Attainment') %}
+{% do t._ok(gauge.value.columnId is string and gauge.minimum.columnId is string and gauge.maximum.columnId is string, 'sigma_flexible_layout: gauge shelves') %}
+{% do t._ok((gauge.columns | selectattr('formula', 'equalto', '0') | list) | length == 1, 'sigma_flexible_layout: a number literal is a formula, not a column') %}
+{% set sankey = t._find(c.elements, 'sankey-chart', 'Flow') %}
+{% do t._ok(sankey.stages | length == 2, 'sigma_flexible_layout: sankey stages') %}
+{% set map = t._find(c.elements, 'region-map', 'Regions') %}
+{% do t._ok(map.region.regionType == 'us-state' and map.color.by == 'scale', 'sigma_flexible_layout: region map') %}
+{# a table over several pages: windows of five rows, each filtered on a hidden row-number column #}
+{% set windows = [] %}
+{% for el in c.elements if el.kind == 'table' %}{% do windows.append(el) %}{% endfor %}
+{% do t._ok(windows | length == 3, 'sigma_flexible_layout: 12 rows at 5 a page is three table windows') %}
+{% for w in windows %}
+  {% set f = w.filters[0] %}
+  {% do t._ok(f.kind == 'number-range' and f.min == loop.index0 * 5 + 1 and f.max == loop.index * 5, 'sigma_flexible_layout: window ' ~ loop.index ~ ' shows rows ' ~ f.min ~ '-' ~ f.max) %}
+  {% set hidden = [] %}
+  {% for col in w.columns if col.get('hidden') %}{% do hidden.append(col) %}{% endfor %}
+  {% do t._ok(hidden | length == 1 and hidden[0].formula == 'RowNumber()' and hidden[0].id == f.columnId, 'sigma_flexible_layout: the filter is on a hidden RowNumber() column') %}
+  {% do t._ok(w.order | length == 4, 'sigma_flexible_layout: the hidden column is not displayed') %}
+{% endfor %}
+{% do t._ok(windows[1].name == 'Orders (page 2 of 3)', 'sigma_flexible_layout: windows are numbered') %}
+{% do t._ok(pages[-3:] == ['All orders', 'All orders (2)', 'All orders (3)'], 'sigma_flexible_layout: each window is on its own page') %}
+{% endmacro %}
+
+
+{# Run with --vars overriding sigma_report_settings (see scripts/run_integration_tests_duckdb.sh): every
+   size the package would hard-code comes from the project instead. #}
+{% macro assert_settings() %}
+{% set t = sigma_report_integration_tests %}
+{% set c = t._spec_of('sigma_sales_simple').contents %}
+{% do t._ok(c.config.margin == 20 and c.config.pageWidth == 794 and c.config.pageHeight == 1123, 'settings: margin and page_size come from the project') %}
+{% set bar = t._find(c.elements, 'bar-chart', 'Revenue by region') %}
+{% do t._ok(t._box(c.layout, bar.id, 'height') == 111, 'settings: chart_h comes from the project (' ~ t._box(c.layout, bar.id, 'height') ~ ')') %}
+{% set kpi = t._find(c.elements, 'kpi-chart', 'Revenue') %}
+{% do t._ok(t._box(c.layout, kpi.id, 'height') == 77, 'settings: kpi_h comes from the project') %}
+{% set title = c.elements[0] %}
+{% do t._ok('font-size: 40px' in title.body, 'settings: title_size comes from the project') %}
+{# a per-call argument still beats the project setting #}
+{% set explicit = t._spec_of('sigma_sales_report').contents %}
+{% do t._ok(explicit.config.margin == 40 and explicit.config.pageWidth == 794, 'settings: report(margin=, page_size=) wins over the project') %}
+{{ log('settings assertions passed', info=True) }}
+{% endmacro %}
+
+
 {% macro _check_presets() %}
 {% set t = sigma_report_integration_tests %}
 {% set c = t._spec_of('preset_executive_summary').contents %}
@@ -307,17 +425,48 @@
 {% do t._ok(t._text_has(c.elements, 'CurrentPageNumber()') and t._text_has(c.elements, 'TotalPageCount()'), 'preset_statement: page numbers are on by default') %}
 {% endmacro %}
 
+{% macro _check_actions() %}
+{% set t = sigma_report_integration_tests %}
+{% set spec = t._spec_of('sigma_actions_report') %}
+{% set c = spec.contents %}
+{% set table = t._find(c.elements, 'table', 'Orders') %}
+{% set notes_id = c.pages | selectattr('name', 'equalto', 'Notes') | map(attribute='id') | first %}
+{% set refresh = t._find(c.elements, 'button', 'Refresh orders') %}
+{% do t._ok(refresh.text == 'Refresh orders' and refresh.appearance == 'filled', 'sigma_actions_report: a button with its text and appearance') %}
+{% do t._ok(refresh.actions | length == 1 and refresh.actions[0].trigger == 'on-click', 'sigma_actions_report: one on-click action') %}
+{% do t._ok(refresh.actions[0].id is string and refresh.actions[0].effects | length == 2, 'sigma_actions_report: the action has an id and two effects, in order') %}
+{% do t._ok(refresh.actions[0].effects[0] == {'effect': 'refresh-element', 'target': {'type': 'element', 'element': table.id}}, 'sigma_actions_report: refresh_element points at the table id') %}
+{% do t._ok(refresh.actions[0].effects[1] == {'effect': 'navigate', 'target': {'type': 'page', 'page': notes_id}}, 'sigma_actions_report: navigate points at the page id') %}
+{% set download = t._find(c.elements, 'button', 'Download PDF') %}
+{% do t._ok(download.actions[0].effects[0].format == {'type': 'pdf', 'layout': 'landscape', 'pageSize': 'a4'} and download.actions[0].effects[0].source == {'type': 'all'}, 'sigma_actions_report: download exports the whole report as a landscape A4 PDF') %}
+{% set reset = t._find(c.elements, 'button', 'Reset filters') %}
+{% do t._ok(reset.actions[0].effects[1].value == {'type': 'constant', 'value': {'type': 'text', 'value': 'West'}}, 'sigma_actions_report: set_control_value types a plain string') %}
+{% do t._ok(reset.actions[0].effects[0].scope == {'type': 'page'} and reset.actions[0].effects[2].url == 'https://example.com/help', 'sigma_actions_report: clear_controls and open_url') %}
+{% do t._ok(table.actions | length == 1 and table.actions[0].trigger == 'on-select' and table.actions[0].effects[0].effect == 'call-api', 'sigma_actions_report: with_actions attaches to an existing element; effect() passes Sigma fields through') %}
+{% do t._ok(refresh.actions[0].id != download.actions[0].id and refresh.actions[0].id != reset.actions[0].id, 'sigma_actions_report: action ids differ') %}
+{% do t._ok(spec.schedules | length == 2 and 'schedules' not in c, 'sigma_actions_report: schedules sit beside contents, not inside it') %}
+{% set weekly = spec.schedules[0] %}
+{% do t._ok(weekly.schedule == {'cronSpec': '0 8 * * 1', 'timezone': 'America/New_York'}, 'sigma_actions_report: schedule cron and timezone') %}
+{% do t._ok(weekly.target == [{'email': 'finance@example.com'}, {'teamId': '<your-team-id>'}], 'sigma_actions_report: recipients, an email and a team mapping') %}
+{% do t._ok(weekly.configV2.title == 'Weekly orders' and weekly.configV2.exportAttachments[0].formatOptions == {'type': 'PDF', 'layout': 'landscape'}, 'sigma_actions_report: schedule title and PDF attachment') %}
+{% do t._ok(weekly.configV2.conditionOptions.condition == {'type': 'isNotEmpty', 'elementId': table.id}, 'sigma_actions_report: only_if_not_empty tests the table id') %}
+{% do t._ok(spec.schedules[1].schedule.timezone == 'UTC' and spec.schedules[1].configV2.attachmentSettings.zipAttachments, 'sigma_actions_report: default timezone, and options merge onto configV2') %}
+{% endmacro %}
+
 {% macro assert_reports() %}
 {% set t = sigma_report_integration_tests %}
-{% for name in ['sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement', 'sigma_paginated_tables', 'sigma_footer_page_numbers'] %}
+{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement', 'sigma_actions_report', 'sigma_paginated_tables', 'sigma_footer_page_numbers'] %}
   {% do t._check_report(name) %}
 {% endfor %}
 {% do t._check_simple() %}
 {% do t._check_dashboard() %}
 {% do t._check_manual() %}
+{% do t._check_long_form() %}
+{% do t._check_flexible() %}
 {% do t._check_leaderboard() %}
 {% do t._check_presets() %}
 {% do t._check_pagination() %}
 {% do t._check_sources() %}
+{% do t._check_actions() %}
 {{ log('all assertions passed', info=True) }}
 {% endmacro %}

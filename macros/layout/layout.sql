@@ -3,31 +3,43 @@
 
    Reports are *paginated documents*, not responsive canvases: every element has an absolute x / y /
    width / height in pixels, measured from the top-left of the page's content area (inside the
-   margin). A workbook's 24-column grid does not exist here.
+   margin). A workbook's 24-column grid does not exist here, so this package supplies a layout model
+   and compiles it down to those pixels.
 
-   Placement is a vertical flow. A page is a list of blocks; a block is either
+   The model is a small tree. A **block** is one of
 
-     * an element, which takes the full content width, or
-     * a `row(...)`, which divides the content width between several elements (equally, or by weight)
-       and is as tall as its tallest element.
+     element      a chart, table, text, ...
+     row(...)     children side by side, sharing the width (equally or by weight)
+     stack(...)   children one above another, sharing the height
+     at(...)      an element pinned at an absolute position, outside the flow
 
-   Blocks are stacked top to bottom with a fixed `gap` between them. When the next block would not fit
-   on the page, the page either fails (the default, so an overflow is never silent) or, with
-   `paginate=true`, continues on a new physical page that repeats the headers and footers. #}
+   and rows and stacks nest in each other to any depth, so any grid-like arrangement can be written
+   directly. Sizing follows two rules.
+
+     * Width flows down: a row divides its width between its children by weight; a stack gives every
+       child its full width.
+     * Height is measured up, then shared out: each block has a *natural* height (an element's `h`;
+       text sized from its content and width; a row = its tallest child; a stack = its children plus
+       gaps). A block may also be *flexible* (`flex()`, or `h='fill'`): it takes a share of whatever
+       height is left over, by weight. A flexible block on a page takes the rest of the page.
+
+   A page stacks its top-level blocks with `gap` between them. When the next block would not fit, the
+   page either fails (the default, so an overflow is never silent) or, with `paginate=true`, continues
+   on a new physical page that repeats the headers and footers. #}
 
 
-{# A horizontal band of elements sharing the page width.
+{# A horizontal band of blocks sharing the width.
 
      sigma_report.row([revenue_kpi, orders_kpi, margin_kpi])
      sigma_report.row([by_region, by_month], widths=[2, 1])
+     sigma_report.row([sigma_report.stack([kpi_a, kpi_b]), sigma_report.stack([chart_a, chart_b])])
 
-   `widths` are relative weights (default: equal). Every element in the row is stretched to the
-   height of the tallest, so a row is always a clean rectangle. `gap` is the space between the
-   elements in pixels; it defaults to the report's gap. `pad` reserves that much trailing weight as
-   empty space, which is how `grid()` keeps a short last row the same cell width as the rows above it.
-   A row may hold elements, `stack(...)`s and lists of them (the composites return lists), but not
-   other rows. `lead` is the same idea at the start: empty weight before the first element, which is
-   how a single element sits at the right of the page. #}
+   `widths` are relative weights (default: equal). Every child is stretched to the height of the row,
+   so a row is always a clean rectangle. `gap` is the space between the children in pixels (default:
+   the report's gap). `pad` reserves that much trailing weight as empty space, which is how `grid()`
+   keeps a short last row the same cell width as the rows above it; `lead` is the same idea at the start
+   (empty weight before the first child), which is how a single element sits at the right of the page.
+   Children are elements, rows and stacks, or lists of them (the composites return lists). #}
 {% macro row(elements, widths=none, gap=none, pad=0, lead=0) %}
 {% set items = sigma_report.flatten(elements) %}
 {% if not items %}
@@ -42,45 +54,110 @@
 {% if weights | length != items | length %}
   {% do sigma_report.fail('row', "widths has " ~ (weights | length) ~ " entries but the row has " ~ (items | length) ~ " elements.") %}
 {% endif %}
-{% set tallest = namespace(h=0) %}
 {% for item in items %}
-  {% if item is not mapping or ('id' not in item and '_stack' not in item) %}
-    {% do sigma_report.fail('row', "a row holds elements built by sigma_report macros (or stack(...)s), got " ~ item) %}
-  {% endif %}
+  {% do sigma_report.check_block(item, 'row') %}
   {% if weights[loop.index0] is not number or weights[loop.index0] <= 0 %}
     {% do sigma_report.fail('row', "widths must be positive numbers, got " ~ weights[loop.index0]) %}
   {% endif %}
-  {% if item.get('_flow') %}
-    {% do sigma_report.fail('row', "a paginated table spans the page width and grows at render time, so it cannot sit in a row - put it directly on the page.") %}
-  {% endif %}
-  {% if item['_h'] > tallest.h %}{% set tallest.h = item['_h'] %}{% endif %}
 {% endfor %}
-{% do return({"_row": items, "_widths": weights, "_gap": gap, "_pad": pad, "_lead": lead, "_h": tallest.h}) %}
+{% do return({"_row": items, "_widths": weights, "_gap": gap, "_pad": pad, "_lead": lead}) %}
 {% endmacro %}
 
 
-{# A vertical group of elements that occupies a single cell of a row - two KPIs beside a chart, say:
+{# A vertical group of blocks - two KPIs above a chart, say:
 
      sigma_report.row([sigma_report.stack([revenue, orders]), trend_chart], widths=[1, 2])
 
-   The elements keep their own heights; `gap` (pixels, default 16) separates them, so the stack is as
-   tall as the sum of its elements plus the gaps. A stack holds elements only - not rows or stacks. #}
-{% macro stack(elements, gap=16) %}
+   Children keep their natural heights, apart from flexible ones (`flex()`), which share what is left
+   when the stack is given more room than it needs (as the cell of a taller row, or the flexible block
+   on a page). `gap` (pixels) separates them; the default is the report's gap. #}
+{% macro stack(elements, gap=none) %}
 {% set items = sigma_report.flatten(elements) %}
 {% if not items %}
   {% do sigma_report.fail('stack', "a stack needs at least one element.") %}
 {% endif %}
-{% set total = namespace(h=gap * (items | length - 1)) %}
 {% for item in items %}
-  {% if item is not mapping or 'id' not in item %}
-    {% do sigma_report.fail('stack', "a stack holds elements built by sigma_report macros, got " ~ item) %}
-  {% endif %}
-  {% if item.get('_flow') %}
-    {% do sigma_report.fail('stack', "a paginated table spans the page width and grows at render time, so it cannot sit in a stack - put it directly on the page.") %}
-  {% endif %}
-  {% set total.h = total.h + item['_h'] %}
+  {% do sigma_report.check_block(item, 'stack') %}
 {% endfor %}
-{% do return({"_stack": items, "_gap": gap, "_h": total.h}) %}
+{% do return({"_stack": items, "_gap": gap}) %}
+{% endmacro %}
+
+
+{# Makes a block flexible: it takes a share of the leftover height, in proportion to `weight`.
+
+     sigma_report.stack([sigma_report.flex(table, weight=2), sigma_report.flex(chart)])   -- 2/3 and 1/3
+     sigma_report.flex(sigma_report.row([map, legend]), min=300)
+
+   `min` is the least height the block may have (default: its natural height). Works on elements, rows
+   and stacks; an element built with `h='fill'` is already flexible. The block is updated in place and
+   returned. A block that contains a flexible child is flexible too, with weight 1, unless it is given
+   its own. #}
+{% macro flex(block, weight=1, min=none) %}
+{% do sigma_report.check_block(block, 'flex') %}
+{% if weight is not number or weight <= 0 %}
+  {% do sigma_report.fail('flex', "weight must be a positive number, got " ~ weight) %}
+{% endif %}
+{% if min is not none and (min is not number or min < 0) %}
+  {% do sigma_report.fail('flex', "min must be a number of pixels, got " ~ min) %}
+{% endif %}
+{% do block.update({"_flex": weight}) %}
+{% if min is not none %}
+  {% do block.update({"_min": min}) %}
+{% endif %}
+{% do return(block) %}
+{% endmacro %}
+
+
+{# Pins an element at an absolute position, outside the flow. Coordinates are pixels from the top-left of
+   the content area, and the element may overlap flowed content (a watermark, a callout, a logo over a
+   banner); say so with `overlap=true`, otherwise the geometry check treats an overlap as a mistake.
+   It belongs to the page it is listed on and takes no room in the flow.
+
+     sigma_report.at(logo, x=620, y=0, width=100, height=48)    #}
+{% macro at(element, x, y, width, height, overlap=false) %}
+{% if element is not mapping or 'id' not in element or element.get('_row') is not none or element.get('_stack') is not none %}
+  {% do sigma_report.fail('at', "pins a single element built by a sigma_report macro, got " ~ element) %}
+{% endif %}
+{% for pair in [['x', x], ['y', y]] %}
+  {% if pair[1] is not number or pair[1] < 0 %}
+    {% do sigma_report.fail('at', pair[0] ~ " must be a number of pixels >= 0, got " ~ pair[1]) %}
+  {% endif %}
+{% endfor %}
+{% for pair in [['width', width], ['height', height]] %}
+  {% if pair[1] is not number or pair[1] <= 0 %}
+    {% do sigma_report.fail('at', pair[0] ~ " must be a positive number of pixels, got " ~ pair[1]) %}
+  {% endif %}
+{% endfor %}
+{% do return({"_abs": {"element": element, "x": x, "y": y, "width": width, "height": height, "overlap": overlap}}) %}
+{% endmacro %}
+
+
+{# Starts a new physical page here: everything after it goes onto the next page. Needs `paginate=true` on
+   the page (otherwise there is no next page to go to), and does nothing if the page is still empty, so
+   it never leaves a blank page. Page-level only - a break cannot sit inside a row or stack. #}
+{% macro page_break() %}
+{% do return({"_break": true}) %}
+{% endmacro %}
+
+
+{# Raises unless `block` can be a child of `where` (a row, a stack, or flex): an element, a row or a
+   stack. `at()` pins to the page and `page_break()` is a page event, so neither can live inside. #}
+{% macro check_block(block, where) %}
+{% if block is not mapping %}
+  {% do sigma_report.fail(where, "expected an element, row or stack built by sigma_report macros, got " ~ block) %}
+{% endif %}
+{% if '_abs' in block %}
+  {% do sigma_report.fail(where, "at(...) pins an element to the page, so it cannot be inside a row or stack - list it on the page.") %}
+{% endif %}
+{% if '_break' in block %}
+  {% do sigma_report.fail(where, "page_break() is a page-level event, so it cannot be inside a row or stack.") %}
+{% endif %}
+{% if block.get('_flow') %}
+  {% do sigma_report.fail(where, "a paginated table spans the page width and grows at render time, so it cannot sit in a " ~ where ~ " - put it directly on the page.") %}
+{% endif %}
+{% if 'id' not in block and '_row' not in block and '_stack' not in block %}
+  {% do sigma_report.fail(where, "expected an element, row or stack built by sigma_report macros, got " ~ block) %}
+{% endif %}
 {% endmacro %}
 
 
@@ -121,44 +198,128 @@
 {% endmacro %}
 
 
-{# Places one block (an element or a row) at vertical offset `y`. A page's blocks are elements and
-   rows; a row's cells are elements and stacks. Returns a list of placements:
-   {element, x, y, width, height}. Widths are whole pixels; the last element in a row absorbs the
-   rounding so a row always spans the content width exactly. #}
-{% macro place_block(block, y, content_w, gap) %}
+{# The pixel width of each cell of a row, in order. Widths are whole pixels; the last cell absorbs the
+   rounding so a row without `pad` spans the width exactly. #}
+{% macro row_cell_widths(block, width, gap) %}
+{% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
+{% set pad = block['_pad'] %}
+{% set lead = block['_lead'] %}
+{% set n = (block['_row'] | length) + (1 if pad > 0 else 0) + (1 if lead > 0 else 0) %}
+{% set usable = width - row_gap * (n - 1) %}
+{% set total = namespace(weight=pad + lead) %}
+{% for w in block['_widths'] %}{% set total.weight = total.weight + w %}{% endfor %}
+{% set cursor = namespace(x=0) %}
+{% if lead > 0 %}
+  {% set cursor.x = (usable * lead / total.weight) | int + row_gap %}
+{% endif %}
+{% set widths = [] %}
+{% for el in block['_row'] %}
+  {% if loop.last and pad <= 0 %}
+    {% set cell = width - cursor.x %}
+  {% else %}
+    {% set cell = (usable * block['_widths'][loop.index0] / total.weight) | int %}
+  {% endif %}
+  {% do widths.append(cell) %}
+  {% set cursor.x = cursor.x + cell + row_gap %}
+{% endfor %}
+{% do return(widths) %}
+{% endmacro %}
+
+
+{# How far from the left edge a row's first cell starts: 0, unless the row has `lead` (empty weight before
+   the first child). Mirrors the arithmetic in `row_cell_widths`. #}
+{% macro row_lead_offset(block, width, gap) %}
+{% set lead = block['_lead'] %}
+{% if lead <= 0 %}
+  {% do return(0) %}
+{% endif %}
+{% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
+{% set n = (block['_row'] | length) + (1 if block['_pad'] > 0 else 0) + 1 %}
+{% set usable = width - row_gap * (n - 1) %}
+{% set total = namespace(weight=block['_pad'] + lead) %}
+{% for w in block['_widths'] %}{% set total.weight = total.weight + w %}{% endfor %}
+{% do return((usable * lead / total.weight) | int + row_gap) %}
+{% endmacro %}
+
+
+{# Measures a block laid out `width` pixels wide: {"h": its natural height, "flex": its flex weight}.
+   A flex weight of 0 means fixed. Text is sized here, from its content and the width it will have, which
+   is why measuring happens in the flow rather than when the element is built. Nothing is mutated. #}
+{% macro measure(block, width, gap) %}
+{% if '_row' in block %}
+  {% set widths = sigma_report.row_cell_widths(block, width, gap) %}
+  {% set acc = namespace(h=0, flexible=false) %}
+  {% for child in block['_row'] %}
+    {% set m = sigma_report.measure(child, widths[loop.index0], gap) %}
+    {% if m['h'] > acc.h %}{% set acc.h = m['h'] %}{% endif %}
+    {% if m['flex'] > 0 %}{% set acc.flexible = true %}{% endif %}
+  {% endfor %}
+  {% set own = block.get('_flex') %}
+  {% set least = block.get('_min') %}
+  {% do return({"h": [acc.h, least if least is not none else 0] | max, "flex": own if own is not none else (1 if acc.flexible else 0)}) %}
+{% elif '_stack' in block %}
+  {% set g = block['_gap'] if block['_gap'] is not none else gap %}
+  {% set acc = namespace(h=g * ((block['_stack'] | length) - 1), flexible=false) %}
+  {% for child in block['_stack'] %}
+    {% set m = sigma_report.measure(child, width, gap) %}
+    {% set acc.h = acc.h + m['h'] %}
+    {% if m['flex'] > 0 %}{% set acc.flexible = true %}{% endif %}
+  {% endfor %}
+  {% set own = block.get('_flex') %}
+  {% set least = block.get('_min') %}
+  {% do return({"h": [acc.h, least if least is not none else 0] | max, "flex": own if own is not none else (1 if acc.flexible else 0)}) %}
+{% endif %}
+{% set natural = sigma_report.text_height(block['_auto'], width) if block.get('_auto') else block['_h'] %}
+{% set least = block.get('_min') %}
+{% do return({"h": [natural, least if least is not none else 0] | max, "flex": block.get('_flex') if block.get('_flex') is not none else 0}) %}
+{% endmacro %}
+
+
+{# Places a block in the box (x, y, width, height). Returns placements: [{element, x, y, width, height}].
+   A row gives every child its cell's width and the whole height. A stack gives children their natural
+   heights, and shares any extra height between its flexible children by weight (the last flexible child
+   takes the rounding), so the stack always fills its box exactly when it has a flexible child. #}
+{% macro place(block, x, y, width, height, gap) %}
 {% set placed = [] %}
 {% if '_row' in block %}
+  {% set widths = sigma_report.row_cell_widths(block, width, gap) %}
   {% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
-  {% set pad = block['_pad'] %}
-  {% set lead = block['_lead'] %}
-  {% set n = (block['_row'] | length) + (1 if pad > 0 else 0) + (1 if lead > 0 else 0) %}
-  {% set usable = content_w - row_gap * (n - 1) %}
-  {% set total = namespace(weight=pad + lead) %}
-  {% for w in block['_widths'] %}{% set total.weight = total.weight + w %}{% endfor %}
-  {% set cursor = namespace(x=0) %}
-  {% if lead > 0 %}
-    {% set cursor.x = (usable * lead / total.weight) | int + row_gap %}
-  {% endif %}
-  {% for el in block['_row'] %}
-    {% if loop.last and pad <= 0 %}
-      {% set width = content_w - cursor.x %}
-    {% else %}
-      {% set width = (usable * block['_widths'][loop.index0] / total.weight) | int %}
+  {% set cursor = namespace(x=x + sigma_report.row_lead_offset(block, width, gap)) %}
+  {% for child in block['_row'] %}
+    {% for p in sigma_report.place(child, cursor.x, y, widths[loop.index0], height, gap) %}
+      {% do placed.append(p) %}
+    {% endfor %}
+    {% set cursor.x = cursor.x + widths[loop.index0] + row_gap %}
+  {% endfor %}
+{% elif '_stack' in block %}
+  {% set g = block['_gap'] if block['_gap'] is not none else gap %}
+  {% set sizes = [] %}
+  {% set weights = [] %}
+  {% set natural = namespace(h=g * ((block['_stack'] | length) - 1), weight=0) %}
+  {% for child in block['_stack'] %}
+    {% set m = sigma_report.measure(child, width, gap) %}
+    {% do sizes.append(m['h']) %}
+    {% do weights.append(m['flex']) %}
+    {% set natural.h = natural.h + m['h'] %}
+    {% set natural.weight = natural.weight + m['flex'] %}
+  {% endfor %}
+  {% set share = namespace(extra=[height - natural.h, 0] | max, weight=natural.weight) %}
+  {% set cursor = namespace(y=y) %}
+  {% for child in block['_stack'] %}
+    {% set h = sizes[loop.index0] %}
+    {% if weights[loop.index0] > 0 and share.weight > 0 %}
+      {% set mine = share.extra if weights[loop.index0] >= share.weight else (share.extra * weights[loop.index0] / share.weight) | int %}
+      {% set h = h + mine %}
+      {% set share.extra = share.extra - mine %}
+      {% set share.weight = share.weight - weights[loop.index0] %}
     {% endif %}
-    {% if '_stack' in el %}
-      {# a stack's elements keep their heights and sit one under another in the cell #}
-      {% set top = namespace(y=y) %}
-      {% for inner in el['_stack'] %}
-        {% do placed.append({"element": inner, "x": cursor.x, "y": top.y, "width": width, "height": inner['_h']}) %}
-        {% set top.y = top.y + inner['_h'] + el['_gap'] %}
-      {% endfor %}
-    {% else %}
-      {% do placed.append({"element": el, "x": cursor.x, "y": y, "width": width, "height": block['_h']}) %}
-    {% endif %}
-    {% set cursor.x = cursor.x + width + row_gap %}
+    {% for p in sigma_report.place(child, x, cursor.y, width, h, gap) %}
+      {% do placed.append(p) %}
+    {% endfor %}
+    {% set cursor.y = cursor.y + h + g %}
   {% endfor %}
 {% else %}
-  {% do placed.append({"element": block, "x": 0, "y": y, "width": content_w, "height": block['_h']}) %}
+  {% do placed.append({"element": block, "x": x, "y": y, "width": width, "height": height}) %}
 {% endif %}
 {% do return(placed) %}
 {% endmacro %}
@@ -169,42 +330,72 @@
    Returns a list of physical pages, each {"placements": [...], "used": pixels_of_height_used}. With
    `paginate=false`, content that does not fit raises an error that says by how much, so an overflow
    is a build failure rather than a clipped page. With `paginate=true` the flow continues on a new
-   page; a single block taller than a whole page is always an error, since it could never fit. #}
+   page; a single block taller than a whole page is always an error, since it could never fit. A
+   flexible block takes all the height left on its page (at least its minimum, else it starts a new
+   page). `at()` blocks do not take part in the flow: they are placed where they say, on the page they
+   are listed on. #}
 {% macro flow(blocks, content_w, content_h, gap, paginate, where) %}
 {% set pages = [] %}
-{% set state = namespace(current=[], y=0) %}
+{% set state = namespace(current=[], y=0, flowed=0) %}
 {% for block in blocks %}
-  {% if block is not mapping or ('id' not in block and '_row' not in block) %}
-    {% do sigma_report.fail(where, "blocks are elements or rows; a stack(...) belongs inside a row(...), got " ~ block) %}
+  {% if block is not mapping or ('id' not in block and '_row' not in block and '_stack' not in block and '_abs' not in block and '_break' not in block) %}
+    {% do sigma_report.fail(where, "blocks are elements, rows, stacks, at(...) or page_break(), got " ~ block) %}
   {% endif %}
-  {% set h = block['_h'] %}
-  {% if block.get('_flow') %}
-    {% if where in ['header', 'footer'] %}
-      {% do sigma_report.fail(where, "a paginated table cannot sit in a " ~ where ~ " panel: it would grow past the panel.") %}
+  {% if '_break' in block %}
+    {% if state.current %}
+      {% if not paginate %}
+        {% do sigma_report.fail(where, "page_break() needs paginate=true on the page - without it there is no next page to continue on.") %}
+      {% endif %}
+      {% do pages.append({"placements": state.current, "used": state.y}) %}
+      {% set state.current = [] %}
+      {% set state.y = 0 %}
+      {% set state.flowed = 0 %}
     {% endif %}
-    {% if not loop.last %}
-      {% do sigma_report.fail(where, "a paginated table must be the last block on its page: it grows at render time and the package cannot know how far content below it would be pushed. Move what follows above the table, or into the footer.") %}
+  {% elif '_abs' in block %}
+    {% set a = block['_abs'] %}
+    {% if a['x'] + a['width'] > content_w or a['y'] + a['height'] > content_h %}
+      {% do sigma_report.fail(where, "at(...) puts an element at x=" ~ a['x'] ~ ", y=" ~ a['y'] ~ " " ~ a['width'] ~ "x" ~ a['height'] ~ "px, outside the " ~ content_w ~ "x" ~ content_h ~ "px content area.") %}
     {% endif %}
-  {% endif %}
-  {% if h > content_h %}
-    {% do sigma_report.fail(where, "a block is " ~ h ~ "px tall but the page's content area is only " ~ content_h ~ "px. Lower its `h=`, or use a larger page_size / smaller margin.") %}
-  {% endif %}
-  {% set needed = state.y + (gap if state.current else 0) + h %}
-  {% if needed > content_h %}
-    {% if not paginate %}
-      {% do sigma_report.fail(where, "content overflows the page by " ~ (needed - content_h) ~ "px (" ~ needed ~ "px of " ~ content_h ~ "px). Pass paginate=true to continue on a new page, or shrink the content.") %}
+    {% do state.current.append({"element": a['element'], "x": a['x'], "y": a['y'], "width": a['width'], "height": a['height'], "overlap": a['overlap']}) %}
+  {% else %}
+    {% if block.get('_flow') %}
+      {% if where in ['header', 'footer'] %}
+        {% do sigma_report.fail(where, "a paginated table cannot sit in a " ~ where ~ " panel: it would grow past the panel.") %}
+      {% endif %}
+      {% for later in blocks[loop.index:] if later is mapping and '_abs' not in later %}
+        {% do sigma_report.fail(where, "a paginated table must be the last block on its page: it grows at render time and the package cannot know how far content below it would be pushed. Move what follows above it, or into the footer.") %}
+      {% endfor %}
     {% endif %}
-    {% do pages.append({"placements": state.current, "used": state.y}) %}
-    {% set state.current = [] %}
-    {% set state.y = 0 %}
+    {% set m = sigma_report.measure(block, content_w, gap) %}
+    {% set flexible = m['flex'] > 0 %}
+    {% set h = m['h'] %}
+    {% if h > content_h %}
+      {% do sigma_report.fail(where, "a block is " ~ h ~ "px tall but the page's content area is only " ~ content_h ~ "px. Lower its `h=`, or use a larger page_size / smaller margin.") %}
+    {% endif %}
+    {% set needed = state.y + (gap if state.flowed else 0) + h %}
+    {% if needed > content_h %}
+      {% if not paginate %}
+        {% do sigma_report.fail(where, "content overflows the page by " ~ (needed - content_h) ~ "px (" ~ needed ~ "px of " ~ content_h ~ "px). Pass paginate=true to continue on a new page, or shrink the content.") %}
+      {% endif %}
+      {% do pages.append({"placements": state.current, "used": state.y}) %}
+      {% set state.current = [] %}
+      {% set state.y = 0 %}
+      {% set state.flowed = 0 %}
+    {% endif %}
+    {% set top = state.y + (gap if state.flowed else 0) %}
+    {% if flexible %}
+      {% set h = content_h - top %}
+    {% endif %}
+    {% for p in sigma_report.place(block, 0, top, content_w, h, gap) %}
+      {% do state.current.append(p) %}
+    {% endfor %}
+    {% set state.y = top + h %}
+    {% set state.flowed = state.flowed + 1 %}
   {% endif %}
-  {% set top = state.y + (gap if state.current else 0) %}
-  {% for p in sigma_report.place_block(block, top, content_w, gap) %}
-    {% do state.current.append(p) %}
-  {% endfor %}
-  {% set state.y = top + h %}
 {% endfor %}
-{% do pages.append({"placements": state.current, "used": state.y}) %}
+{% if state.current or not pages %}
+  {% do pages.append({"placements": state.current, "used": state.y}) %}
+{% endif %}
 {% do return(pages) %}
 {% endmacro %}
 

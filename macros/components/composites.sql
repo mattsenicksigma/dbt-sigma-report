@@ -39,7 +39,7 @@
 {% endif %}
 {% do return(sigma_report.kpi(
   source, spec['value'],
-  name=spec.get('name'), key=spec.get('key'), h=spec.get('h', 96), format=spec.get('format'),
+  name=spec.get('name'), key=spec.get('key'), h=spec.get('h'), format=spec.get('format'),
   compare_to=spec.get('compare_to'), compare_label=spec.get('compare_label'),
   timeline=spec.get('timeline'), period=spec.get('period', 'month'), trend=spec.get('trend', false),
   direction=spec.get('direction', 'higher'), description=spec.get('description')
@@ -47,16 +47,16 @@
 {% endmacro %}
 
 
-{# Builds a chart from a plain mapping. `type` is bar, line, area, scatter, pie or donut; the other
-   keys are that chart macro's arguments (x / y for cartesian charts, category / value for pie and
-   donut). This is the dispatcher behind `simple_dashboard`'s `charts=`; it is public so you can use
+{# Builds a chart from a plain mapping. `type` is bar, line, area, scatter, pie, donut, combo, waterfall,
+   box, funnel, gauge, treemap or sankey; the other keys are that chart macro's arguments (x / y for
+   cartesian charts, category / value for pie, donut and treemap, stage / value for funnel, ...). This is the dispatcher behind `simple_dashboard`'s `charts=`; it is public so you can use
    the same convention in your own composites. #}
 {% macro chart_from_spec(source, spec) %}
 {% if spec is not mapping or 'type' not in spec %}
   {% do sigma_report.fail('chart_from_spec', "a chart spec is a mapping with at least `type`, got " ~ spec) %}
 {% endif %}
 {% set t = spec['type'] %}
-{% set common_h = spec.get('h', 260) %}
+{% set common_h = spec.get('h') %}
 {% if t == 'bar' %}
   {% do return(sigma_report.bar_chart(source, spec['x'], spec['y'], color=spec.get('color'), name=spec.get('name'), key=spec.get('key'), h=common_h, sort_by=spec.get('sort_by', 'y'), sort_direction=spec.get('sort_direction', 'desc'), stacking=spec.get('stacking'), labels=spec.get('labels', false), legend=spec.get('legend', true), horizontal=spec.get('horizontal', false))) %}
 {% elif t == 'line' %}
@@ -69,8 +69,22 @@
   {% do return(sigma_report.pie_chart(source, spec['category'], spec['value'], name=spec.get('name'), key=spec.get('key'), h=common_h, labels=spec.get('labels', true), legend=spec.get('legend', true))) %}
 {% elif t == 'donut' %}
   {% do return(sigma_report.donut_chart(source, spec['category'], spec['value'], hole_value=spec.get('hole_value'), name=spec.get('name'), key=spec.get('key'), h=common_h, labels=spec.get('labels', true), legend=spec.get('legend', true))) %}
+{% elif t == 'combo' %}
+  {% do return(sigma_report.combo_chart(source, spec['x'], spec['y'], series_types=spec.get('series_types'), secondary=spec.get('secondary'), color=spec.get('color'), name=spec.get('name'), key=spec.get('key'), h=common_h, labels=spec.get('labels', false), legend=spec.get('legend', true))) %}
+{% elif t == 'waterfall' %}
+  {% do return(sigma_report.waterfall_chart(source, spec['x'], spec['y'], name=spec.get('name'), key=spec.get('key'), h=common_h, legend=spec.get('legend', true))) %}
+{% elif t == 'box' %}
+  {% do return(sigma_report.box_chart(source, spec['y'], x=spec.get('x'), name=spec.get('name'), key=spec.get('key'), h=common_h, legend=spec.get('legend', true))) %}
+{% elif t == 'funnel' %}
+  {% do return(sigma_report.funnel_chart(source, spec['stage'], spec['value'], name=spec.get('name'), key=spec.get('key'), h=common_h)) %}
+{% elif t == 'gauge' %}
+  {% do return(sigma_report.gauge_chart(source, spec['value'], minimum=spec.get('minimum'), maximum=spec.get('maximum'), target=spec.get('target'), name=spec.get('name'), key=spec.get('key'), h=common_h)) %}
+{% elif t == 'treemap' %}
+  {% do return(sigma_report.treemap_chart(source, spec['category'], spec['value'], split_by=spec.get('split_by'), color=spec.get('color'), color_by=spec.get('color_by', 'scale'), name=spec.get('name'), key=spec.get('key'), h=common_h)) %}
+{% elif t == 'sankey' %}
+  {% do return(sigma_report.sankey_chart(source, spec['stages'], spec['value'], name=spec.get('name'), key=spec.get('key'), h=common_h)) %}
 {% endif %}
-{% do sigma_report.fail('chart_from_spec', "unknown chart type '" ~ t ~ "' - use bar, line, area, scatter, pie or donut (or build the element with sigma_report.raw).") %}
+{% do sigma_report.fail('chart_from_spec', "unknown chart type '" ~ t ~ "' - use bar, line, area, scatter, pie, donut, combo, waterfall, box, funnel, gauge, treemap or sankey (or build the element with sigma_report.raw).") %}
 {% endmacro %}
 
 
@@ -90,19 +104,19 @@
 
 {# Assembles blocks into a one-page, paginating report. The shared tail of the `simple_*` composites:
    `args` is a mapping of `sigma_report.report()` arguments (theme, folder_id, report_id, description,
-   page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers). Public so your
+   page_size, orientation, margin, gap, header, footer, header_height, footer_height). Public so your
    own composites can end the same way. #}
 {% macro report_from_args(name, blocks, args={}) %}
-{% set a = {"page_size": "letter"} %}
+{% set a = {} %}
 {% do a.update(args) %}
 {% do return(sigma_report.report(
   name,
   [sigma_report.page(name, blocks, paginate=true)],
   theme=a.get('theme', {}), folder_id=a.get('folder_id'), report_id=a.get('report_id'),
-  description=a.get('description'), page_size=a['page_size'], orientation=a.get('orientation'),
-  margin=a.get('margin', 48), gap=a.get('gap', 16), header=a.get('header'), footer=a.get('footer'),
-  header_height=a.get('header_height', 48), footer_height=a.get('footer_height', 32),
-  page_numbers=a.get('page_numbers', false)
+  description=a.get('description'), page_size=a.get('page_size'), orientation=a.get('orientation'),
+  margin=a.get('margin'), gap=a.get('gap'), header=a.get('header'), footer=a.get('footer'),
+  header_height=a.get('header_height'), footer_height=a.get('footer_height'),
+  page_numbers=a.get('page_numbers', false), schedules=a.get('schedules', [])
 )) %}
 {% endmacro %}
 
@@ -122,16 +136,19 @@
      )
 
    `kpis` and `charts` are lists of mappings (see `kpi_from_spec` / `chart_from_spec`); charts are laid
-   out two to a row (`charts_per_row`). The table is the detail view: it is built on the same source
-   and takes `table_h` pixels; `table_paginate=true` expands it to all its rows when the report renders
-   (see `table`). Content that does not fit one page continues on the next
+   out two to a row (`charts_per_row`). The table is the detail view, built on the same source and
+   showing `table_rows` rows (default 10) - or pass `table_h='fill'` to give it the rest of its page, or
+   a pixel height. Give `table_page_count` (with `table_sort`) to run the table over that many pages of
+   `table_rows` rows each instead - see `table_pages` - or `table_paginate=true` to let Sigma expand the
+   table to all its rows when the report renders (it must then be the last block). Content that does not
+   fit one page continues on the next
    (`paginate=true`). Pass any `sigma_report.report()` argument through `report_args`
    (page_size, orientation, margin, header, footer, theme, ...). The result is a finished report spec,
    ready for `sigma_report.materialize()`.
 
    It is built from the public macros only; when you outgrow it, write the same thing by hand with
    `page()` and `row()`. #}
-{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_h=300, table_sort=[], table_paginate=false, report_args={}) %}
+{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_rows=none, table_h=none, table_page_count=none, table_paginate=false, table_sort=[], report_args={}) %}
 {% set blocks = sigma_report.report_header(name, subtitle) %}
 {% if kpis %}
   {% set tiles = [] %}
@@ -143,8 +160,12 @@
   {% for spec in charts %}{% do figures.append(sigma_report.chart_from_spec(source, spec)) %}{% endfor %}
   {% for r in sigma_report.grid(figures, per_row=charts_per_row) %}{% do blocks.append(r) %}{% endfor %}
 {% endif %}
-{% if table_columns %}
-  {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, h=table_h, sort=table_sort, paginate=table_paginate)) %}
+{% if table_columns and table_page_count %}
+  {# the detail table runs over `table_page_count` pages of `table_rows` rows each #}
+  {% do blocks.append(sigma_report.page_break()) %}
+  {% for b in sigma_report.table_pages(source, table_columns, sigma_report.setting('table_rows', table_rows), pages=table_page_count, name=table_name, sort=table_sort) %}{% do blocks.append(b) %}{% endfor %}
+{% elif table_columns %}
+  {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, rows=table_rows, h=table_h, sort=table_sort, paginate=table_paginate)) %}
 {% endif %}
 {% do return(sigma_report.report_from_args(name, blocks, report_args)) %}
 {% endmacro %}
@@ -161,7 +182,7 @@
      )
 
    A thin layer over the same public macros as `simple_dashboard`; `report_args` as there. #}
-{% macro simple_leaderboard(name, source, dimensions, measure, measure_name=none, subtitle=none, measure_format=none, bar_h=300, report_args={}) %}
+{% macro simple_leaderboard(name, source, dimensions, measure, measure_name=none, subtitle=none, measure_format=none, bar_h=none, report_args={}) %}
 {% set blocks = sigma_report.report_header(name, subtitle) %}
 {% do blocks.append(sigma_report.kpi(source, measure, name=measure_name or 'Total', format=measure_format, key='leaderboard-total')) %}
 {% for dimension in dimensions %}

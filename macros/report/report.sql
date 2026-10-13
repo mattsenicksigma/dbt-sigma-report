@@ -42,28 +42,39 @@
      report_id    an existing report to update instead of creating a new one (the export script
                   replaces its contents; omit on first create)
      description  free-text description
-     page_size    'letter' (default), 'legal', 'tabloid', 'a4', 'a3', 'screen', or {width: px, height: px}
-     orientation  'portrait' / 'landscape'; none keeps the preset's own shape
-     margin       page margin in pixels
-     gap          vertical space between blocks, in pixels
-     header       elements / rows for the header panel, repeated on every page (none = no header)
-     footer       elements / rows for the footer panel
-     header_height, footer_height   panel heights in pixels
      page_numbers true = a "{page} of {total}" page number at the right of the footer on every page.
                   With a footer of your own, its blocks share the footer row with the number, so
                   they must be elements (not rows); add `page_number()` to your own footer row
                   otherwise.
+     page_size    'letter' (default), 'legal', 'tabloid', 'a4', 'a3', 'screen', or {width: px, height: px}
+     orientation  'portrait' / 'landscape'; none keeps the preset's own shape
+     margin       page margin in pixels
+     gap          space between blocks, in pixels
+
+   page_size, margin, gap, header_height and footer_height default to the project's
+   `sigma_report_settings` (see core/settings.sql), so a team sets them once.
+     header       elements / rows for the header panel, repeated on every page (none = no header)
+     footer       elements / rows for the footer panel
+     header_height, footer_height   panel heights in pixels
+     schedules    list of sigma_report.schedule(...): scheduled PDF exports. Carried on the spec beside
+                  `contents` and applied by the export script after the report is pushed
 
    Header and footer space is subtracted from the content area, so panel content can never overlap
    page content.
 
    Everything is validated here, at parse time: an empty page, a duplicate page name, an element used
    twice, or content that does not fit its page fails `dbt parse` rather than reaching Sigma. #}
-{% macro report(name, pages, theme={}, folder_id=none, report_id=none, description=none, page_size='letter', orientation=none, margin=48, gap=16, header=none, footer=none, header_height=48, footer_height=32, page_numbers=false) %}
+{% macro report(name, pages, theme={}, folder_id=none, report_id=none, description=none, page_size=none, orientation=none, margin=none, gap=none, header=none, footer=none, header_height=none, footer_height=none, schedules=[], page_numbers=false) %}
 {% if not pages %}
   {% do sigma_report.fail('report', "pages must not be empty.") %}
 {% endif %}
+{% set page_size = sigma_report.setting('page_size', page_size) %}
+{% set margin = sigma_report.setting('margin', margin) %}
+{% set gap = sigma_report.setting('gap', gap) %}
+{% set header_height = sigma_report.setting('header_height', header_height) %}
+{% set footer_height = sigma_report.setting('footer_height', footer_height) %}
 {% if page_numbers %}
+  {# a "{page} of {total}" number at the right of the footer, on every page #}
   {% if footer %}
     {% set footer_items = sigma_report.flatten(footer) %}
     {% set footer_weights = [] %}
@@ -80,6 +91,7 @@
     {% set footer = [sigma_report.row([sigma_report.page_number()], widths=[1], lead=5)] %}
   {% endif %}
 {% endif %}
+{% set overlap_ok = [] %}
 {% set dims = sigma_report.page_dimensions(page_size, orientation) %}
 {% set content_w = dims['width'] - 2 * margin %}
 {% set panel_space = (header_height if header else 0) + (footer_height if footer else 0) %}
@@ -118,6 +130,7 @@
     {% do page_names.append(page_name) %}
     {% do page_stubs.append({"id": page_id, "name": page_name}) %}
     {% do layout_roots.append(sigma_report.page_xml(page_id, sheet['placements'])) %}
+    {% for pl in sheet['placements'] if pl.get('overlap') %}{% do overlap_ok.append(pl['element']['id']) %}{% endfor %}
     {% for el in sigma_report.placed_elements(sheet['placements']) %}
       {% if el['id'] in seen_ids %}
         {% do sigma_report.fail('report', "'" ~ el['_key'] ~ "' and '" ~ seen_ids[el['id']] ~ "' resolve to the same element id (an element can be placed once). Give one of them a distinct `key=`.") %}
@@ -135,6 +148,7 @@
   {% for stub in page_stubs %}{% do ids.append(stub['id']) %}{% endfor %}
   {% do panels.append({"id": panel['id'], "type": panel['type'], "title": panel['type'] | title, "config": config, "pages": ids}) %}
   {% do layout_roots.append(sigma_report.panel_xml(panel['id'], panel['type'], panel['placements'])) %}
+  {% for pl in panel['placements'] if pl.get('overlap') %}{% do overlap_ok.append(pl['element']['id']) %}{% endfor %}
   {% for el in sigma_report.placed_elements(panel['placements']) %}
     {% if el['id'] in seen_ids %}
       {% do sigma_report.fail('report', "'" ~ el['_key'] ~ "' and '" ~ seen_ids[el['id']] ~ "' resolve to the same element id (an element can be placed once). Give one of them a distinct `key=`.") %}
@@ -164,6 +178,23 @@
 {% endif %}
 {% if report_id %}
   {% do spec.update({"reportId": report_id}) %}
+{% endif %}
+{% if schedules %}
+  {% set titles = [] %}
+  {% for s in schedules %}
+    {% if s is not mapping or 'configV2' not in s %}
+      {% do sigma_report.fail('report', "schedules must be built by sigma_report.schedule(...), got " ~ s) %}
+    {% endif %}
+    {% if s['configV2']['title'] in titles %}
+      {% do sigma_report.fail('report', "two schedules are named '" ~ s['configV2']['title'] ~ "' - schedule names must be unique.") %}
+    {% endif %}
+    {% do titles.append(s['configV2']['title']) %}
+  {% endfor %}
+  {% do spec.update({"schedules": schedules}) %}
+{% endif %}
+{# bookkeeping for the geometry check; `_`-prefixed keys never reach Sigma (export_reports.request_body) #}
+{% if overlap_ok %}
+  {% do spec.update({"_overlap_ok": overlap_ok}) %}
 {% endif %}
 {% if description %}
   {% do spec.update({"description": description}) %}

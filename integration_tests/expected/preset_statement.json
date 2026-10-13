@@ -7,7 +7,7 @@
     },
     "elements": [
       {
-        "body": "# Customer statement",
+        "body": "<span style=\"font-size: 28px\">**Customer statement**</span>",
         "id": "610b27fa60",
         "kind": "text",
         "verticalAlign": "center"
@@ -141,7 +141,7 @@
       }
     ],
     "kind": "report",
-    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"ffa37eb454\">\n  <Element elementId=\"610b27fa60\" x=\"0\" y=\"0\" width=\"720\" height=\"64\"/>\n  <Element elementId=\"3cdfcc43c9\" x=\"0\" y=\"80\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"2a22d18198\" x=\"0\" y=\"108\" width=\"720\" height=\"28\"/>\n  <Element elementId=\"4104a20f33\" x=\"0\" y=\"152\" width=\"720\" height=\"80\"/>\n  <Element elementId=\"2fd54478e6\" x=\"0\" y=\"248\" width=\"720\" height=\"420\" flow=\"paginated\"/>\n</Page>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"70bc3f81f4\" x=\"0\" y=\"0\" width=\"563\" height=\"28\"/>\n  <Element elementId=\"7076efdc78\" x=\"579\" y=\"0\" width=\"141\" height=\"28\"/>\n</Panel>\n",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"ffa37eb454\">\n  <Element elementId=\"610b27fa60\" x=\"0\" y=\"0\" width=\"720\" height=\"50\"/>\n  <Element elementId=\"3cdfcc43c9\" x=\"0\" y=\"66\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"2a22d18198\" x=\"0\" y=\"94\" width=\"720\" height=\"31\"/>\n  <Element elementId=\"4104a20f33\" x=\"0\" y=\"141\" width=\"720\" height=\"80\"/>\n  <Element elementId=\"2fd54478e6\" x=\"0\" y=\"237\" width=\"720\" height=\"420\" flow=\"paginated\"/>\n</Page>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"70bc3f81f4\" x=\"0\" y=\"0\" width=\"563\" height=\"31\"/>\n  <Element elementId=\"7076efdc78\" x=\"579\" y=\"0\" width=\"141\" height=\"31\"/>\n</Panel>\n",
     "pages": [
       {
         "id": "ffa37eb454",
@@ -170,7 +170,7 @@
           "categoricalScheme": "superbloom",
           "colorOverrides": [
             {
-              "color": "#fafafa",
+              "color": "#ffffff",
               "name": "backgroundCanvas"
             }
           ],

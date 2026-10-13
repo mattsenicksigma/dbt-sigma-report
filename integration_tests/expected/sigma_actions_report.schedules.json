@@ -1,0 +1,65 @@
+[
+  {
+    "configV2": {
+      "conditionOptions": {
+        "condition": {
+          "elementId": "3f0a211ee4",
+          "type": "isNotEmpty"
+        },
+        "type": "workbook"
+      },
+      "exportAttachments": [
+        {
+          "formatOptions": {
+            "layout": "landscape",
+            "type": "PDF"
+          }
+        }
+      ],
+      "includeLink": true,
+      "messageBody": "Orders this week.",
+      "runAsRecipient": false,
+      "title": "Weekly orders"
+    },
+    "schedule": {
+      "cronSpec": "0 8 * * 1",
+      "timezone": "America/New_York"
+    },
+    "target": [
+      {
+        "email": "finance@example.com"
+      },
+      {
+        "teamId": "<your-team-id>"
+      }
+    ]
+  },
+  {
+    "configV2": {
+      "attachmentSettings": {
+        "zipAttachments": true
+      },
+      "exportAttachments": [
+        {
+          "formatOptions": {
+            "layout": "portrait",
+            "type": "PDF"
+          }
+        }
+      ],
+      "includeLink": true,
+      "messageBody": "",
+      "runAsRecipient": false,
+      "title": "Monthly orders"
+    },
+    "schedule": {
+      "cronSpec": "0 6 1 * *",
+      "timezone": "UTC"
+    },
+    "target": [
+      {
+        "email": "finance@example.com"
+      }
+    ]
+  }
+]

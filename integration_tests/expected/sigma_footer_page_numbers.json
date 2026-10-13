@@ -7,7 +7,7 @@
     },
     "elements": [
       {
-        "body": "# Footer page numbers",
+        "body": "<span style=\"font-size: 28px\">**Footer page numbers**</span>",
         "id": "8bb28d92a7",
         "kind": "text",
         "verticalAlign": "center"
@@ -76,7 +76,7 @@
       }
     ],
     "kind": "report",
-    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"8bb28d92a7\" x=\"0\" y=\"0\" width=\"720\" height=\"64\"/>\n  <Element elementId=\"43a257bc86\" x=\"0\" y=\"80\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"e23575c8c7\" x=\"0\" y=\"108\" width=\"720\" height=\"96\"/>\n</Page>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"b9349e4345\" x=\"0\" y=\"0\" width=\"563\" height=\"28\"/>\n  <Element elementId=\"7076efdc78\" x=\"579\" y=\"0\" width=\"141\" height=\"28\"/>\n</Panel>\n",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"8bb28d92a7\" x=\"0\" y=\"0\" width=\"720\" height=\"50\"/>\n  <Element elementId=\"43a257bc86\" x=\"0\" y=\"66\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"e23575c8c7\" x=\"0\" y=\"94\" width=\"720\" height=\"96\"/>\n</Page>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"b9349e4345\" x=\"0\" y=\"0\" width=\"563\" height=\"31\"/>\n  <Element elementId=\"7076efdc78\" x=\"579\" y=\"0\" width=\"141\" height=\"31\"/>\n</Panel>\n",
     "pages": [
       {
         "id": "348e718e5d",
@@ -105,7 +105,7 @@
           "categoricalScheme": "superbloom",
           "colorOverrides": [
             {
-              "color": "#fafafa",
+              "color": "#ffffff",
               "name": "backgroundCanvas"
             }
           ],
