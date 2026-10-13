@@ -153,7 +153,7 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 
 | Layer | Macros |
 | --- | --- |
-| Report | `report`, `page`, `materialize` |
+| Report | `report`, `page`, `materialize`, `filter_by_value` |
 | Layout | `row`, `stack`, `flex`, `at`, `page_break`, `grid`, `section`, `report_header` |
 | Elements | `kpi`, `table`, `table_pages`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image`, `embed`, `button`, `progress` |
 | Charts | `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `combo_chart`, `waterfall_chart`, `box_chart`, `funnel_chart`, `gauge_chart`, `treemap_chart`, `sankey_chart`, `point_map`, `region_map`, `geography_map` |
@@ -225,6 +225,18 @@ Reports have no per-viewer filters, so `simple_statement` describes whatever its
 ### Building your own
 
 `simple_dashboard` uses only public macros; when you outgrow it, write the same thing by hand. [`integration_tests/models/sigma_sales_report.sql`](integration_tests/models/sigma_sales_report.sql) is a runnable two-page example with header and footer panels, a pivot, a calculated column, a chart built on a table that is already on the page, and both escape hatches.
+
+### Scoping a report to one value
+
+Reports have no controls, so a report cannot be filtered by whoever opens it. `filter_by_value` fixes the scope in the report instead, which lets one general model feed a report about a single customer, region or API key rather than hard-coding that scope in the model:
+
+```sql
+{% set spec = sigma_report.simple_dashboard(name='West region', source=sigma_report.from_ref('stg_orders'), ...) %}
+{% set spec = sigma_report.filter_by_value(spec, 'region', ['West']) %}   -- mode='exclude' drops the values instead
+{{ sigma_report.materialize(spec) }}
+```
+
+It adds a hidden column and a `list` filter on it to every element built on a warehouse table. Elements built on another element inherit the filter, text and dividers have no data, and the build fails if no element could be filtered, so a report is never left silently unscoped. Take the values from a project var (`[var('my_key')]`) to keep them out of the SQL.
 
 ### Escape hatches
 

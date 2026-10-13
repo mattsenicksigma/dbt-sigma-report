@@ -45,7 +45,7 @@
   {% for k in value.keys() %}
     {% if k == 'columnId' and value[k] is string %}{% do acc.append(value[k]) %}
     {% elif k == 'columnIds' %}{% for c in value[k] %}{% do acc.append(c['columnId'] if c is mapping else c) %}{% endfor %}
-    {% elif k in ['order', 'values'] and value[k] is sequence and value[k] is not string %}{% for c in value[k] %}{% if c is string %}{% do acc.append(c) %}{% endif %}{% endfor %}
+    {% elif k in ['order', 'values'] and value[k] is sequence and value[k] is not string and not (k == 'values' and value.get('kind') == 'list') %}{% for c in value[k] %}{% if c is string %}{% do acc.append(c) %}{% endif %}{% endfor %}
     {% elif k == 'column' and value[k] is string %}{% do acc.append(value[k]) %}
     {% elif k == 'by' and value.get('direction') %}{% do acc.append(value[k]) %}
     {% endif %}
@@ -383,9 +383,26 @@
 {% do t._ok(t._text_has(c.elements, 'Payment terms: net 30.'), 'preset_statement: footer note') %}
 {% endmacro %}
 
+{% macro _check_filtered() %}
+{% set t = sigma_report_integration_tests %}
+{% set c = t._spec_of('sigma_filtered_dashboard').contents %}
+{% set filtered = namespace(count=0) %}
+{% for el in c.elements if el.get('source') %}
+  {% set filtered.count = filtered.count + 1 %}
+  {% do t._ok(el.filters | length == 1, 'sigma_filtered_dashboard: ' ~ el.kind ~ ' has exactly one filter') %}
+  {% set f = el.filters[0] %}
+  {% do t._ok(f.kind == 'list' and f.mode == 'include' and f['values'] == ['West'], 'sigma_filtered_dashboard: the filter keeps only West') %}
+  {% set hidden = [] %}
+  {% for col in el.columns if col.id == f.columnId %}{% do hidden.append(col) %}{% endfor %}
+  {% do t._ok(hidden | length == 1 and hidden[0].hidden is true and hidden[0].formula.endswith('/Region]'), 'sigma_filtered_dashboard: the filter targets a hidden Region column') %}
+{% endfor %}
+{% do t._ok(filtered.count == 3, 'sigma_filtered_dashboard: the KPI, the chart and the table are all filtered') %}
+{% endmacro %}
+
+
 {% macro assert_reports() %}
 {% set t = sigma_report_integration_tests %}
-{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement'] %}
+{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement', 'sigma_filtered_dashboard'] %}
   {% do t._check_report(name) %}
 {% endfor %}
 {% do t._check_simple() %}
@@ -396,5 +413,6 @@
 {% do t._check_leaderboard() %}
 {% do t._check_presets() %}
 {% do t._check_sources() %}
+{% do t._check_filtered() %}
 {{ log('all assertions passed', info=True) }}
 {% endmacro %}
