@@ -139,7 +139,7 @@ sigma_report.stack([sigma_report.flex(trend, weight=2), sigma_report.flex(mix), 
 
 ### Tables
 
-A Sigma table does not paginate: it is a window onto the first rows of its sort order, as many as its height shows, with the total row count in a summary bar. So the useful question is "how many rows", and the package answers it three ways:
+A Sigma table element has no pagination or row-limit setting: it is a window onto the first rows of its sort order, as many as its height shows, with the total row count in a summary bar. So the useful question is "how many rows", and the package answers it three ways. (Sigma also has an "Expand table rows" option that grows a table to all its rows at render time; it is a layout attribute rather than an element property, and a separate feature from the windows below.)
 
 - `table(..., rows=10)`: show 10 rows. The height follows (about 130px of title, header and summary bar plus 20px a row; both numbers are [settings](#project-settings)). `sort=` chooses which rows. `h='fill'` gives a table the rest of its page.
 - `table(..., window=[21, 40])`: show rows 21 to 40 of the sort order, using a hidden `RowNumber()` column and a range filter on it.
