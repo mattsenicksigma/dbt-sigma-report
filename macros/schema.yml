@@ -1864,7 +1864,7 @@ macros:
         description: "A 5-field cron expression, e.g. `0 8 * * 1`."
       - name: to
         type: list[any]
-        description: "Recipients: an email address, or a Sigma target mapping (`teamId`, `slackConversationId`, `webhookUrl`, ...) used as written."
+        description: "Recipients: an email address, or a Sigma target mapping (`teamId`, `slackConversationId`, `webhookUrl`, ...) used as written. `slackConversationId` is a Slack channel ID or member ID; the UI also takes a #channel-name, but the API docs only document IDs."
       - name: timezone
         type: string
         description: "IANA timezone name."
