@@ -1,0 +1,291 @@
+{
+  "contents": {
+    "config": {
+      "margin": 48,
+      "pageHeight": 1056,
+      "pageWidth": 816
+    },
+    "elements": [
+      {
+        "body": "# Executive summary\n\n<span style=\"color: #737373\">Bookings against plan</span>",
+        "id": "7661218310",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "direction": "horizontal",
+        "id": "879cca4cfc",
+        "kind": "divider",
+        "style": {
+          "color": "#e5e5e5",
+          "strokeStyle": "solid",
+          "width": 1
+        }
+      },
+      {
+        "columns": [
+          {
+            "format": {
+              "formatString": ",.0f",
+              "kind": "number",
+              "prefix": "$"
+            },
+            "formula": "Sum([Amount])",
+            "id": "31bb510f86"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "271652d713"
+          },
+          {
+            "formula": "Sum([Target Amount])",
+            "id": "58f73555eb"
+          },
+          {
+            "formula": "[stg_orders/Target Amount]",
+            "id": "37ca3dddf8"
+          }
+        ],
+        "comparison": {
+          "colorBad": "#c10007",
+          "colorGood": "#008236",
+          "direction": "higher",
+          "display": "percentage",
+          "label": "plan",
+          "labelColor": "#737373"
+        },
+        "comparisonColumn": {
+          "columnId": "58f73555eb"
+        },
+        "id": "83464a9bf5",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Revenue"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "31bb510f86",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "Count()",
+            "id": "b03559bdec"
+          }
+        ],
+        "id": "e23575c8c7",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Orders"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "b03559bdec",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "columns": [
+          {
+            "format": {
+              "formatString": ",.0f",
+              "kind": "number",
+              "prefix": "$"
+            },
+            "formula": "Avg([Amount])",
+            "id": "0436070107"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "aff95f7b29"
+          }
+        ],
+        "id": "68d491f971",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Average order"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "0436070107",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#4f39f6"
+        },
+        "columns": [
+          {
+            "formula": "DateTrunc(\"month\", [Order Date])",
+            "id": "e063d40351"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "54079f81c5"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "e4d5203e53"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "a9fe325aac"
+          }
+        ],
+        "id": "0dff74f759",
+        "kind": "line-chart",
+        "legend": {
+          "visibility": "hidden"
+        },
+        "name": "Revenue by month",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "e063d40351",
+          "sort": {
+            "by": "e063d40351",
+            "direction": "ascending"
+          }
+        },
+        "yAxis": {
+          "columnIds": [
+            "e4d5203e53"
+          ]
+        }
+      },
+      {
+        "body": "### Highlights",
+        "id": "a05b08ee58",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "body": "- Enterprise carries most of the revenue\n- SMB is running below plan",
+        "id": "a4a6c953f0",
+        "kind": "text",
+        "verticalAlign": "top"
+      }
+    ],
+    "kind": "report",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"bb02ca6ef6\">\n  <Element elementId=\"7661218310\" x=\"0\" y=\"0\" width=\"720\" height=\"64\"/>\n  <Element elementId=\"879cca4cfc\" x=\"0\" y=\"80\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"108\" width=\"229\" height=\"104\"/>\n  <Element elementId=\"e23575c8c7\" x=\"245\" y=\"108\" width=\"229\" height=\"104\"/>\n  <Element elementId=\"68d491f971\" x=\"490\" y=\"108\" width=\"230\" height=\"104\"/>\n  <Element elementId=\"0dff74f759\" x=\"0\" y=\"228\" width=\"720\" height=\"280\"/>\n  <Element elementId=\"a05b08ee58\" x=\"0\" y=\"524\" width=\"720\" height=\"32\"/>\n  <Element elementId=\"a4a6c953f0\" x=\"0\" y=\"572\" width=\"720\" height=\"56\"/>\n</Page>\n",
+    "pages": [
+      {
+        "id": "bb02ca6ef6",
+        "name": "Executive summary"
+      }
+    ],
+    "schemaVersion": 1,
+    "settings": {
+      "theme": {
+        "name": "Light",
+        "overrides": {
+          "borderRadius": "round",
+          "categoricalScheme": "superbloom",
+          "colorOverrides": [
+            {
+              "color": "#fafafa",
+              "name": "backgroundCanvas"
+            }
+          ],
+          "colors": {
+            "danger": "#c10007",
+            "highlight": "#1A70F1",
+            "success": "#008236",
+            "surface": "#ffffff",
+            "text": "#0a0a0a",
+            "warning": "#bb4d00"
+          },
+          "fonts": {
+            "dataFont": "Inter",
+            "textFont": "Inter"
+          }
+        }
+      }
+    }
+  },
+  "folderId": "00000000-0000-0000-0000-000000000002",
+  "name": "Executive summary"
+}

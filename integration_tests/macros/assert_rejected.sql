@@ -67,3 +67,8 @@
 {% macro assert_no_room_rejected() %}
 {% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a')])], margin=600) %}
 {% endmacro %}
+
+{# ---- presets ---- #}
+{% macro assert_preset_without_kpis_rejected() %}{% do sigma_report.simple_executive_summary('r', sigma_report_integration_tests._src(), []) %}{% endmacro %}
+{% macro assert_statement_without_columns_rejected() %}{% do sigma_report.simple_statement('r', sigma_report_integration_tests._src(), []) %}{% endmacro %}
+{% macro assert_bad_facts_rejected() %}{% do sigma_report.facts_line(['owner']) %}{% endmacro %}

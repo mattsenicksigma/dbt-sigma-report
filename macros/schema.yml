@@ -979,6 +979,134 @@ macros:
         type: dict[string,any]
         description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
 
+  # ------------------------------------------------------------ presets
+  - name: facts_line
+    description: "One line of label / value facts (statement number, customer, due date), shown as bold label then value."
+    arguments:
+      - name: facts
+        type: list[any]
+        description: "A list of [label, value] pairs, shown in order."
+      - name: key
+        type: string
+        description: "Gives the element a stable id; use distinct keys if you add more than one."
+  - name: bullet_list
+    description: "A bulleted text block sized to its number of lines."
+    arguments:
+      - name: lines
+        type: any
+        description: "A string or a list of strings, one bullet each."
+      - name: key
+        type: string
+        description: "Gives the element a stable id."
+      - name: h
+        type: int
+        description: "Height in pixels; defaults to the line count."
+  - name: simple_executive_summary
+    description: "A one-page executive summary: headline KPIs, one full-width chart and a bulleted highlights section. Returns a finished report spec."
+    arguments:
+      - name: name
+        type: string
+        description: "Report name; also its page name and the source of its stable ids."
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: kpis
+        type: list[any]
+        description: "KPI mappings (see `kpi_from_spec`); keep it to three or four. Required."
+      - name: chart
+        type: dict[string,any]
+        description: "One chart mapping (see `chart_from_spec`), shown full width."
+      - name: highlights
+        type: any
+        description: "A string or list of strings shown as bullets."
+      - name: highlights_heading
+        type: string
+        description: "Heading above the highlights."
+      - name: subtitle
+        type: string
+        description: "Muted text under the title."
+      - name: chart_h
+        type: int
+        description: "Height of the chart in pixels."
+      - name: report_args
+        type: dict[string,any]
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+  - name: simple_period_review
+    description: "A recurring period review: KPIs compared with the previous period, a trend, a breakdown per dimension and notes. Returns a finished report spec."
+    arguments:
+      - name: name
+        type: string
+        description: "Report name; also its page name and the source of its stable ids."
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: date_field
+        type: string
+        description: "The date every KPI is compared over and the trend chart axis."
+      - name: kpis
+        type: list[any]
+        description: "KPI mappings (see `kpi_from_spec`); the first one drives the trend and breakdown charts. Required."
+      - name: period
+        type: string
+        description: "A DateTrunc unit: day, week, month, quarter or year."
+      - name: breakdowns
+        type: list[any]
+        description: "Dimension fields; each becomes a ranked bar chart of the first KPI."
+      - name: notes
+        type: any
+        description: "A string or list of strings shown as bullets under the notes heading."
+      - name: notes_heading
+        type: string
+        description: "Heading above the notes."
+      - name: subtitle
+        type: string
+        description: "Muted text under the title."
+      - name: trend_h
+        type: int
+        description: "Height of the trend chart in pixels."
+      - name: chart_h
+        type: int
+        description: "Height of each breakdown chart in pixels."
+      - name: report_args
+        type: dict[string,any]
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+  - name: simple_statement
+    description: "A statement or invoice: a facts line, a line-item table, a totals band and a footer note. Returns a finished report spec."
+    arguments:
+      - name: name
+        type: string
+        description: "Report name; also its page name and the source of its stable ids."
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: columns
+        type: list[any]
+        description: "Fields of the line-item table, in order. Required."
+      - name: facts
+        type: list[any]
+        description: "A list of [label, value] pairs shown above the table (see `facts_line`)."
+      - name: totals
+        type: list[any]
+        description: "KPI mappings shown in a band under the table."
+      - name: footer_note
+        type: string
+        description: "Plain text below the totals."
+      - name: rows_name
+        type: string
+        description: "Name of the line-item table."
+      - name: rows_h
+        type: int
+        description: "Height reserved for the table in pixels; a block must fit on one page."
+      - name: rows_sort
+        type: list[any]
+        description: "Table sort: a field, or a (field, asc|desc) pair, per item."
+      - name: subtitle
+        type: string
+        description: "Muted text under the title."
+      - name: report_args
+        type: dict[string,any]
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+
   # ------------------------------------------------------------ theme
   - name: theme
     description: "The fully-resolved theme (every token as a hex string): defaults, then the `sigma_report_theme` project var, then the override passed here."

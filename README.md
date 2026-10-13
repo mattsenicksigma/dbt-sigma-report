@@ -124,7 +124,8 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 | Report | `report`, `page`, `materialize` |
 | Layout | `row`, `stack`, `grid`, `section`, `report_header` |
 | Elements | `kpi`, `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `table`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image` |
-| Composites | `simple_dashboard`, `simple_leaderboard`, `kpi_row`, `kpi_from_spec`, `chart_from_spec` |
+| Composites | `simple_dashboard`, `simple_leaderboard`, `kpi_row`, `kpi_from_spec`, `chart_from_spec`, `facts_line`, `bullet_list` |
+| Report presets | `simple_executive_summary`, `simple_period_review`, `simple_statement` |
 | Sources | `from_ref`, `from_source`, `from_data_model`, `warehouse_table`, `data_model`, `element` |
 | Fields | `field`, `format_currency`, `format_integer`, `format_percent`, `format_compact`, `format_number`, `format_date` |
 | Escape hatches | `extend`, `raw` |
@@ -147,6 +148,29 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 Both take `report_args={...}`: any argument of `report()` (`page_size`, `orientation`, `margin`, `header`, `footer`, `theme`, `description`, `folder_id`, `report_id`).
 
 KPI mappings take `value`, `name`, `format`, `compare_to` (compare against a target measure), `timeline` + `period` (compare the latest period with the one before), `trend` (sparkline), `direction` (`higher` / `lower` / `none`), `description`. Chart mappings take a `type` of `bar`, `line`, `area`, `scatter`, `pie` or `donut` plus that chart macro's arguments (`x`, `y`, `color`, `sort_by`, `stacking`, `labels`, ...).
+
+### Report presets
+
+Whole documents from data alone, each a thin layer over the same public macros as `simple_dashboard` (and each taking `report_args`):
+
+| Preset | What it makes |
+| --- | --- |
+| `simple_executive_summary` | headline KPIs, one full-width chart, a few highlight bullets |
+| `simple_period_review` | KPIs for the latest period against the one before (with sparklines), a trend, a breakdown per dimension, notes and actions |
+| `simple_statement` | a statement or invoice: facts, a line-item table, a totals band, a footer note |
+
+```sql
+{% set spec = sigma_report.simple_period_review(
+    name='Monthly review',
+    source=sigma_report.from_ref('stg_orders'),
+    date_field='order_date', period='month',
+    kpis=[{'value': 'Sum([Amount])', 'name': 'Revenue'}, {'value': 'Count()', 'name': 'Orders'}],
+    breakdowns=['region', 'segment'],
+    notes=['Action: review SMB pricing'],
+) %}
+```
+
+Reports have no per-viewer filters, so `simple_statement` describes whatever its `source` holds: point it at a model already limited to one customer, and loop in dbt to make one per customer.
 
 ### Building your own
 
