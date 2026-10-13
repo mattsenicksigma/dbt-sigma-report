@@ -213,17 +213,6 @@
 {% endmacro %}
 
 
-{# A button, from Sigma's own properties: `text` plus anything in `options` (fillColor, size, actions, ...),
-   checked against the button schema. #}
-{% macro button(text, key, options={}, h=none) %}
-{% do sigma_report.check_properties('button', options, 'button') %}
-{% set el = sigma_report.new_element('button', 'button', key, none, h if h is not none else 40) %}
-{% do el.update({"text": text}) %}
-{% for k in options.keys() %}{% do el.update({k: options[k]}) %}{% endfor %}
-{% do return(el) %}
-{% endmacro %}
-
-
 {# An embedded page by URL. #}
 {% macro embed(url, key, h=none) %}
 {% set el = sigma_report.new_element('embed', 'embed', key, none, sigma_report.setting('chart_h', h)) %}

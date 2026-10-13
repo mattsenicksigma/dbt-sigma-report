@@ -51,6 +51,9 @@ macros:
       - name: footer_height
         type: int
         description: "Footer panel height in pixels."
+      - name: schedules
+        type: list[any]
+        description: "`schedule(...)` results: scheduled PDF exports, carried on the spec beside `contents` and applied by the export script."
   - name: page
     description: "One page of a report: a name and the blocks (elements and rows) stacked on it, top to bottom. With `paginate=true` it continues onto further physical pages when it is taller than one."
     arguments:
@@ -1185,21 +1188,6 @@ macros:
       - name: h
         type: any
         description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
-  - name: button
-    description: "A button, from Sigma's own properties in `options`, checked against the schema."
-    arguments:
-      - name: text
-        type: string
-        description: "The button label."
-      - name: key
-        type: string
-        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
-      - name: options
-        type: dict[string,any]
-        description: "Raw Sigma properties, checked against the schema for the kind."
-      - name: h
-        type: any
-        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
   - name: embed
     description: "An embedded page by URL."
     arguments:
@@ -1736,3 +1724,171 @@ macros:
       - name: value
         type: any
         description: "Any structure."
+  # ------------------------------------------------------------ actions
+  - name: button
+    description: "A button. Give it `actions=` to make it do something; see `action` and the effect macros."
+    arguments:
+      - name: text
+        type: string
+        description: "The button label."
+      - name: actions
+        type: list[any]
+        description: "`action(...)` results to attach."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name."
+      - name: h
+        type: any
+        description: "Height in pixels, or none for the project's `button_h` setting."
+      - name: appearance
+        type: string
+        description: "`filled`, `outline` or `text`."
+      - name: align
+        type: string
+        description: "`left`, `center`, `right` or `stretch`."
+      - name: size
+        type: string
+        description: "`small`, `medium` or `large`."
+      - name: radius
+        type: string
+        description: "Corner style: `square`, `round` or `pill`."
+  - name: action_triggers
+    description: "The triggers Sigma accepts as a bare string (on-click, on-select, on-change, ...)."
+  - name: action
+    description: "One action sequence: a trigger and the effects that run, in order, when it fires. Attach it with `button(actions=)` or `with_actions`."
+    arguments:
+      - name: trigger
+        type: any
+        description: "A trigger string (see `action_triggers`), or a mapping with an `on` key (an `on-select` scoped to a column, or with a `condition`) used as written."
+      - name: effects
+        type: list[any]
+        description: "Effects built by the effect macros, or by `effect()`."
+      - name: key
+        type: string
+        description: "Keeps the action's id stable if you reorder a list of them; defaults to its position."
+  - name: with_actions
+    description: "Attaches actions to any element (a macro's result or `raw()`). Updates the element in place and returns it; calling it again appends. Ids come from the element id, the trigger and the action's key or position."
+    arguments:
+      - name: el
+        type: dict[string,any]
+        description: "An element built by a sigma_report macro."
+      - name: actions
+        type: list[any]
+        description: "`action(...)` results."
+  - name: effect
+    description: "An effect of any kind, with Sigma's own fields (call-api, insert-rows, update-rows, send-embed-event, if-else, ...)."
+    arguments:
+      - name: name
+        type: string
+        description: "Sigma's effect name, e.g. `call-api`."
+      - name: properties
+        type: dict[string,any]
+        description: "Sigma's own fields for that effect, used as written."
+  - name: set_control_value
+    description: "Effect: set a control to a value."
+    arguments:
+      - name: control
+        type: any
+        description: "The control's id (or an element carrying one)."
+      - name: value
+        type: any
+        description: "A string, number, boolean or list of strings (typed for you), or a Sigma value mapping used as written."
+  - name: clear_control
+    description: "Effect: clear one control."
+    arguments:
+      - name: control
+        type: any
+        description: "The control's id."
+  - name: clear_controls
+    description: "Effect: clear many controls at once."
+    arguments:
+      - name: scope
+        type: string
+        description: "`workbook` (the whole report), `page` or `container`."
+      - name: page
+        type: any
+        description: "With scope `page`: the page (a `page()` result or id); omit for the current page."
+      - name: container
+        type: any
+        description: "With scope `container`: the container element or its id."
+  - name: open_url
+    description: "Effect: open a URL. Supports `{{formula}}` segments."
+    arguments:
+      - name: url
+        type: string
+        description: "The URL."
+      - name: target
+        type: string
+        description: "`_blank` (new tab), `_self` or `_parent`."
+  - name: navigate
+    description: "Effect: jump to a page or to an element. Pass exactly one of `page` / `element`."
+    arguments:
+      - name: page
+        type: any
+        description: "A `page()` result or page id."
+      - name: element
+        type: any
+        description: "An element or its id."
+  - name: refresh_element
+    description: "Effect: re-run an element's query."
+    arguments:
+      - name: element
+        type: any
+        description: "An element or its id."
+  - name: download
+    description: "Effect: download the report, one page or one element."
+    arguments:
+      - name: format
+        type: string
+        description: "`csv`, `excel`, `json`, `pdf` or `png`."
+      - name: page
+        type: any
+        description: "Export one page (a `page()` result or id)."
+      - name: element
+        type: any
+        description: "Export one element (or its id). With neither, everything is exported."
+      - name: layout
+        type: string
+        description: "PDF only: `portrait` or `landscape`."
+      - name: page_size
+        type: string
+        description: "PDF only: letter, legal, tabloid or a0-a4."
+  - name: schedule
+    description: "A scheduled PDF export of the report. Not part of the report's contents: it is carried on the spec (`report(schedules=)`) and applied by `scripts/export_reports.py --push`, matched to Sigma's by name."
+    arguments:
+      - name: name
+        type: string
+        description: "The schedule's title in Sigma; also how a re-push finds the schedule to update."
+      - name: cron
+        type: string
+        description: "A 5-field cron expression, e.g. `0 8 * * 1`."
+      - name: to
+        type: list[any]
+        description: "Recipients: an email address, or a Sigma target mapping (`teamId`, `slackConversationId`, `webhookUrl`, ...) used as written. `slackConversationId` is a Slack channel ID or member ID; the UI also takes a #channel-name, but the API docs only document IDs."
+      - name: timezone
+        type: string
+        description: "IANA timezone name."
+      - name: message
+        type: string
+        description: "Message body."
+      - name: layout
+        type: string
+        description: "PDF layout: `portrait` or `landscape`."
+      - name: scale
+        type: any
+        description: "PDF scale factor."
+      - name: include_link
+        type: bool
+        description: "Include a link back to the report."
+      - name: run_as_recipient
+        type: bool
+        description: "Run the export as each recipient, so their data permissions apply."
+      - name: only_if_not_empty
+        type: any
+        description: "Only send when this element (or id) has rows."
+      - name: only_if_empty
+        type: any
+        description: "Only send when this element (or id) has no rows."
+      - name: options
+        type: dict[string,any]
+        description: "Sigma's own `configV2` fields, deep-merged on (control values, attachment settings, ...)."

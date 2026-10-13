@@ -52,13 +52,15 @@
      header       elements / rows for the header panel, repeated on every page (none = no header)
      footer       elements / rows for the footer panel
      header_height, footer_height   panel heights in pixels
+     schedules    list of sigma_report.schedule(...): scheduled PDF exports. Carried on the spec beside
+                  `contents` and applied by the export script after the report is pushed
 
    Header and footer space is subtracted from the content area, so panel content can never overlap
    page content.
 
    Everything is validated here, at parse time: an empty page, a duplicate page name, an element used
    twice, or content that does not fit its page fails `dbt parse` rather than reaching Sigma. #}
-{% macro report(name, pages, theme={}, folder_id=none, report_id=none, description=none, page_size=none, orientation=none, margin=none, gap=none, header=none, footer=none, header_height=none, footer_height=none) %}
+{% macro report(name, pages, theme={}, folder_id=none, report_id=none, description=none, page_size=none, orientation=none, margin=none, gap=none, header=none, footer=none, header_height=none, footer_height=none, schedules=[]) %}
 {% if not pages %}
   {% do sigma_report.fail('report', "pages must not be empty.") %}
 {% endif %}
@@ -154,6 +156,19 @@
 {% endif %}
 {% if report_id %}
   {% do spec.update({"reportId": report_id}) %}
+{% endif %}
+{% if schedules %}
+  {% set titles = [] %}
+  {% for s in schedules %}
+    {% if s is not mapping or 'configV2' not in s %}
+      {% do sigma_report.fail('report', "schedules must be built by sigma_report.schedule(...), got " ~ s) %}
+    {% endif %}
+    {% if s['configV2']['title'] in titles %}
+      {% do sigma_report.fail('report', "two schedules are named '" ~ s['configV2']['title'] ~ "' - schedule names must be unique.") %}
+    {% endif %}
+    {% do titles.append(s['configV2']['title']) %}
+  {% endfor %}
+  {% do spec.update({"schedules": schedules}) %}
 {% endif %}
 {# bookkeeping for the geometry check; `_`-prefixed keys never reach Sigma (export_reports.request_body) #}
 {% if overlap_ok %}

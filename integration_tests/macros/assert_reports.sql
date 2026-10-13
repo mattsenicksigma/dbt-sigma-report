@@ -59,12 +59,12 @@
 {% endmacro %}
 
 
-{# First element of `kind` whose title text (or, for a plain-string name, the name) matches `title`;
+{# First element of `kind` whose title text (or, for a plain-string name, the name; a button's `text`) matches `title`;
    `title` none matches any. #}
 {% macro _find(elements, kind, title) %}
 {% for el in elements %}
   {% if el.kind == kind %}
-    {% set shown = el.name.text if el.get('name') is mapping else el.get('name') %}
+    {% set shown = el.name.text if el.get('name') is mapping else (el.get('name') if el.get('name') is not none else el.get('text')) %}
     {% set shown = shown if shown is not none else '' %}
     {% if title is none or shown == title %}
       {% do return(el) %}
@@ -383,9 +383,37 @@
 {% do t._ok(t._text_has(c.elements, 'Payment terms: net 30.'), 'preset_statement: footer note') %}
 {% endmacro %}
 
+{% macro _check_actions() %}
+{% set t = sigma_report_integration_tests %}
+{% set spec = t._spec_of('sigma_actions_report') %}
+{% set c = spec.contents %}
+{% set table = t._find(c.elements, 'table', 'Orders') %}
+{% set notes_id = c.pages | selectattr('name', 'equalto', 'Notes') | map(attribute='id') | first %}
+{% set refresh = t._find(c.elements, 'button', 'Refresh orders') %}
+{% do t._ok(refresh.text == 'Refresh orders' and refresh.appearance == 'filled', 'sigma_actions_report: a button with its text and appearance') %}
+{% do t._ok(refresh.actions | length == 1 and refresh.actions[0].trigger == 'on-click', 'sigma_actions_report: one on-click action') %}
+{% do t._ok(refresh.actions[0].id is string and refresh.actions[0].effects | length == 2, 'sigma_actions_report: the action has an id and two effects, in order') %}
+{% do t._ok(refresh.actions[0].effects[0] == {'effect': 'refresh-element', 'target': {'type': 'element', 'element': table.id}}, 'sigma_actions_report: refresh_element points at the table id') %}
+{% do t._ok(refresh.actions[0].effects[1] == {'effect': 'navigate', 'target': {'type': 'page', 'page': notes_id}}, 'sigma_actions_report: navigate points at the page id') %}
+{% set download = t._find(c.elements, 'button', 'Download PDF') %}
+{% do t._ok(download.actions[0].effects[0].format == {'type': 'pdf', 'layout': 'landscape', 'pageSize': 'a4'} and download.actions[0].effects[0].source == {'type': 'all'}, 'sigma_actions_report: download exports the whole report as a landscape A4 PDF') %}
+{% set reset = t._find(c.elements, 'button', 'Reset filters') %}
+{% do t._ok(reset.actions[0].effects[1].value == {'type': 'constant', 'value': {'type': 'text', 'value': 'West'}}, 'sigma_actions_report: set_control_value types a plain string') %}
+{% do t._ok(reset.actions[0].effects[0].scope == {'type': 'page'} and reset.actions[0].effects[2].url == 'https://example.com/help', 'sigma_actions_report: clear_controls and open_url') %}
+{% do t._ok(table.actions | length == 1 and table.actions[0].trigger == 'on-select' and table.actions[0].effects[0].effect == 'call-api', 'sigma_actions_report: with_actions attaches to an existing element; effect() passes Sigma fields through') %}
+{% do t._ok(refresh.actions[0].id != download.actions[0].id and refresh.actions[0].id != reset.actions[0].id, 'sigma_actions_report: action ids differ') %}
+{% do t._ok(spec.schedules | length == 2 and 'schedules' not in c, 'sigma_actions_report: schedules sit beside contents, not inside it') %}
+{% set weekly = spec.schedules[0] %}
+{% do t._ok(weekly.schedule == {'cronSpec': '0 8 * * 1', 'timezone': 'America/New_York'}, 'sigma_actions_report: schedule cron and timezone') %}
+{% do t._ok(weekly.target == [{'email': 'finance@example.com'}, {'teamId': '<your-team-id>'}], 'sigma_actions_report: recipients, an email and a team mapping') %}
+{% do t._ok(weekly.configV2.title == 'Weekly orders' and weekly.configV2.exportAttachments[0].formatOptions == {'type': 'PDF', 'layout': 'landscape'}, 'sigma_actions_report: schedule title and PDF attachment') %}
+{% do t._ok(weekly.configV2.conditionOptions.condition == {'type': 'isNotEmpty', 'elementId': table.id}, 'sigma_actions_report: only_if_not_empty tests the table id') %}
+{% do t._ok(spec.schedules[1].schedule.timezone == 'UTC' and spec.schedules[1].configV2.attachmentSettings.zipAttachments, 'sigma_actions_report: default timezone, and options merge onto configV2') %}
+{% endmacro %}
+
 {% macro assert_reports() %}
 {% set t = sigma_report_integration_tests %}
-{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement'] %}
+{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement', 'sigma_actions_report'] %}
   {% do t._check_report(name) %}
 {% endfor %}
 {% do t._check_simple() %}
@@ -396,5 +424,6 @@
 {% do t._check_leaderboard() %}
 {% do t._check_presets() %}
 {% do t._check_sources() %}
+{% do t._check_actions() %}
 {{ log('all assertions passed', info=True) }}
 {% endmacro %}

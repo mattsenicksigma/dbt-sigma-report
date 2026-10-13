@@ -75,3 +75,18 @@ assert_no_room_rejected | leave no room on a
 assert_preset_without_kpis_rejected | sigma_report.simple_executive_summary: kpis is required
 assert_statement_without_columns_rejected | sigma_report.simple_statement: columns is required
 assert_bad_facts_rejected | sigma_report.facts_line: facts is a list of [label, value] pairs
+
+assert_unknown_trigger_rejected | sigma_report.action: unknown trigger 'on-hover'
+assert_action_without_effects_rejected | sigma_report.action: effects must be a non-empty list
+assert_action_bad_effect_rejected | sigma_report.action: each effect must be built by a sigma_report effect macro
+assert_with_actions_non_element_rejected | sigma_report.with_actions: expected an element built by a sigma_report macro
+assert_duplicate_actions_rejected | sigma_report.with_actions: two actions on
+assert_bad_button_appearance_rejected | sigma_report.button: appearance must be
+assert_navigate_needs_one_target_rejected | sigma_report.navigate: pass exactly one of page= or element=
+assert_bad_effect_reference_rejected | sigma_report.refresh_element: element must be an element / page built by a sigma_report macro, or an id string
+assert_bad_download_format_rejected | sigma_report.download: format must be csv, excel, json, pdf or png
+assert_bad_cron_rejected | sigma_report.schedule: cron must be a 5-field cron expression
+assert_schedule_without_recipients_rejected | sigma_report.schedule: to must be a non-empty list of recipients
+assert_bad_recipient_rejected | sigma_report.schedule: a recipient is an email address or a Sigma target mapping
+assert_two_schedule_conditions_rejected | sigma_report.schedule: pass at most one of only_if_not_empty= / only_if_empty=
+assert_duplicate_schedule_names_rejected | sigma_report.report: two schedules are named 's'
