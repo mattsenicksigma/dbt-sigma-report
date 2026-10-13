@@ -27,6 +27,7 @@
   "pivot_h": 300,
   "map_h": 320,
   "gauge_h": 180,
+  "button_h": 40,
   "divider_h": 12,
   "image_h": 64,
   "table_rows": 10,

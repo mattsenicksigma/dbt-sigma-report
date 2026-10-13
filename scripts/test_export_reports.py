@@ -33,8 +33,17 @@ def manifest_for(specs):
     return {"nodes": nodes}
 
 
+def schedule(title="Weekly"):
+    return {
+        "target": [{"email": "finance@example.com"}],
+        "schedule": {"cronSpec": "0 8 * * 1", "timezone": "UTC"},
+        "configV2": {"title": title, "messageBody": "", "exportAttachments": [{"formatOptions": {"type": "PDF", "layout": "portrait"}}]},
+    }
+
+
 class FakeSigma(BaseHTTPRequestHandler):
     calls = []
+    existing_schedules = []
 
     def log_message(self, *args):
         pass
@@ -59,9 +68,17 @@ class FakeSigma(BaseHTTPRequestHandler):
             return self._reply(200, {"reportId": "r-new", "url": "https://sigma.example/r-new"})
         if self.path.startswith("/v2/reports/") and self.path.endswith("/contents"):
             return self._reply(200, {})
+        if self.path.split("?")[0].endswith("/schedules"):
+            if self.command == "GET":
+                if "page=2" in self.path:
+                    return self._reply(200, {"entries": FakeSigma.existing_schedules[1:], "nextPage": None})
+                return self._reply(200, {"entries": FakeSigma.existing_schedules[:1], "nextPage": "2"})
+            return self._reply(200, {"scheduledNotificationId": "s-new"})
+        if "/schedules/" in self.path and self.command == "PATCH":
+            return self._reply(200, {})
         return self._reply(404, {})
 
-    do_POST = do_PUT = _handle
+    do_POST = do_PUT = do_GET = do_PATCH = _handle
 
 
 class ExportTests(unittest.TestCase):
@@ -78,6 +95,23 @@ class ExportTests(unittest.TestCase):
     def test_request_body_drops_report_id(self):
         spec = dict(good_spec(), reportId="r1")
         self.assertNotIn("reportId", export_reports.request_body(spec))
+
+    def test_request_body_drops_schedules(self):
+        spec = dict(good_spec(), schedules=[schedule()])
+        self.assertNotIn("schedules", export_reports.request_body(spec))
+
+    def test_schedule_problems_are_caught(self):
+        spec = dict(good_spec(), schedules=[schedule("A"), schedule("A")])
+        self.assertTrue(any("distinct" in p for p in export_reports.check_spec("a", spec)))
+        bad = schedule()
+        bad["schedule"]["cronSpec"] = "daily"
+        bad["target"] = []
+        problems = export_reports.check_spec("a", dict(good_spec(), schedules=[bad]))
+        self.assertTrue(any("cron" in p for p in problems) and any("no recipients" in p for p in problems))
+        gated = schedule()
+        gated["configV2"]["conditionOptions"] = {"type": "workbook", "condition": {"type": "isNotEmpty", "elementId": "ghost"}}
+        self.assertTrue(any("not in the report" in p for p in export_reports.check_spec("a", dict(good_spec(), schedules=[gated]))))
+        self.assertEqual(export_reports.check_spec("a", dict(good_spec(), schedules=[schedule()])), [])
 
     def test_good_spec_has_no_problems(self):
         self.assertEqual(export_reports.check_spec("a", good_spec()), [])
@@ -187,6 +221,26 @@ class PushTests(unittest.TestCase):
         before = copy.deepcopy(spec)
         export_reports.push({"a": spec}, dry_run=True, client=self.client())
         self.assertEqual(spec, before)
+
+    def test_schedules_follow_the_report_and_match_by_title(self):
+        FakeSigma.existing_schedules = [
+            {"scheduledNotificationId": "s-old", "configV2": {"title": "Weekly"}},
+            {"scheduledNotificationId": "s-other", "configV2": {"title": "Monthly"}},
+        ]
+        spec = dict(good_spec(), schedules=[schedule("Monthly"), schedule("Daily")])
+        export_reports.push({"a": spec}, dry_run=False, client=self.client())
+        calls = [(m, p) for m, p, _, _ in FakeSigma.calls if "/schedules" in p or p == "/v2/reports"]
+        self.assertEqual(calls[0], ("POST", "/v2/reports"))
+        self.assertIn(("GET", "/v2/reports/r-new/schedules"), calls)
+        self.assertIn(("GET", "/v2/reports/r-new/schedules?page=2"), calls)
+        self.assertIn(("PATCH", "/v2/reports/r-new/schedules/s-other"), calls)
+        self.assertIn(("POST", "/v2/reports/r-new/schedules"), calls)
+        self.assertNotIn("DELETE", [m for m, _ in calls])
+        self.assertFalse(any(p.endswith("s-old") for _, p in calls))  # unmentioned schedules are left alone
+
+    def test_dry_run_never_touches_schedules(self):
+        export_reports.push({"a": dict(good_spec(), schedules=[schedule()])}, dry_run=True, client=self.client())
+        self.assertFalse(any("/schedules" in p for _, p, _, _ in FakeSigma.calls))
 
     def test_bad_credentials_raise(self):
         with self.assertRaises(RuntimeError):

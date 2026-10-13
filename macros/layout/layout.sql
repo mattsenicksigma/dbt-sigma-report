@@ -37,9 +37,10 @@
    `widths` are relative weights (default: equal). Every child is stretched to the height of the row,
    so a row is always a clean rectangle. `gap` is the space between the children in pixels (default:
    the report's gap). `pad` reserves that much trailing weight as empty space, which is how `grid()`
-   keeps a short last row the same cell width as the rows above it. Children are elements, rows and
-   stacks, or lists of them (the composites return lists). #}
-{% macro row(elements, widths=none, gap=none, pad=0) %}
+   keeps a short last row the same cell width as the rows above it; `lead` is the same idea at the start
+   (empty weight before the first child), which is how a single element sits at the right of the page.
+   Children are elements, rows and stacks, or lists of them (the composites return lists). #}
+{% macro row(elements, widths=none, gap=none, pad=0, lead=0) %}
 {% set items = sigma_report.flatten(elements) %}
 {% if not items %}
   {% do sigma_report.fail('row', "a row needs at least one element.") %}
@@ -59,7 +60,7 @@
     {% do sigma_report.fail('row', "widths must be positive numbers, got " ~ weights[loop.index0]) %}
   {% endif %}
 {% endfor %}
-{% do return({"_row": items, "_widths": weights, "_gap": gap, "_pad": pad}) %}
+{% do return({"_row": items, "_widths": weights, "_gap": gap, "_pad": pad, "_lead": lead}) %}
 {% endmacro %}
 
 
@@ -151,6 +152,9 @@
 {% if '_break' in block %}
   {% do sigma_report.fail(where, "page_break() is a page-level event, so it cannot be inside a row or stack.") %}
 {% endif %}
+{% if block.get('_flow') %}
+  {% do sigma_report.fail(where, "a paginated table spans the page width and grows at render time, so it cannot sit in a " ~ where ~ " - put it directly on the page.") %}
+{% endif %}
 {% if 'id' not in block and '_row' not in block and '_stack' not in block %}
   {% do sigma_report.fail(where, "expected an element, row or stack built by sigma_report macros, got " ~ block) %}
 {% endif %}
@@ -199,11 +203,15 @@
 {% macro row_cell_widths(block, width, gap) %}
 {% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
 {% set pad = block['_pad'] %}
-{% set n = (block['_row'] | length) + (1 if pad > 0 else 0) %}
+{% set lead = block['_lead'] %}
+{% set n = (block['_row'] | length) + (1 if pad > 0 else 0) + (1 if lead > 0 else 0) %}
 {% set usable = width - row_gap * (n - 1) %}
-{% set total = namespace(weight=pad) %}
+{% set total = namespace(weight=pad + lead) %}
 {% for w in block['_widths'] %}{% set total.weight = total.weight + w %}{% endfor %}
 {% set cursor = namespace(x=0) %}
+{% if lead > 0 %}
+  {% set cursor.x = (usable * lead / total.weight) | int + row_gap %}
+{% endif %}
 {% set widths = [] %}
 {% for el in block['_row'] %}
   {% if loop.last and pad <= 0 %}
@@ -215,6 +223,22 @@
   {% set cursor.x = cursor.x + cell + row_gap %}
 {% endfor %}
 {% do return(widths) %}
+{% endmacro %}
+
+
+{# How far from the left edge a row's first cell starts: 0, unless the row has `lead` (empty weight before
+   the first child). Mirrors the arithmetic in `row_cell_widths`. #}
+{% macro row_lead_offset(block, width, gap) %}
+{% set lead = block['_lead'] %}
+{% if lead <= 0 %}
+  {% do return(0) %}
+{% endif %}
+{% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
+{% set n = (block['_row'] | length) + (1 if block['_pad'] > 0 else 0) + 1 %}
+{% set usable = width - row_gap * (n - 1) %}
+{% set total = namespace(weight=block['_pad'] + lead) %}
+{% for w in block['_widths'] %}{% set total.weight = total.weight + w %}{% endfor %}
+{% do return((usable * lead / total.weight) | int + row_gap) %}
 {% endmacro %}
 
 
@@ -260,7 +284,7 @@
 {% if '_row' in block %}
   {% set widths = sigma_report.row_cell_widths(block, width, gap) %}
   {% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
-  {% set cursor = namespace(x=x) %}
+  {% set cursor = namespace(x=x + sigma_report.row_lead_offset(block, width, gap)) %}
   {% for child in block['_row'] %}
     {% for p in sigma_report.place(child, cursor.x, y, widths[loop.index0], height, gap) %}
       {% do placed.append(p) %}
@@ -334,6 +358,14 @@
     {% endif %}
     {% do state.current.append({"element": a['element'], "x": a['x'], "y": a['y'], "width": a['width'], "height": a['height'], "overlap": a['overlap']}) %}
   {% else %}
+    {% if block.get('_flow') %}
+      {% if where in ['header', 'footer'] %}
+        {% do sigma_report.fail(where, "a paginated table cannot sit in a " ~ where ~ " panel: it would grow past the panel.") %}
+      {% endif %}
+      {% for later in blocks[loop.index:] if later is mapping and '_abs' not in later %}
+        {% do sigma_report.fail(where, "a paginated table must be the last block on its page: it grows at render time and the package cannot know how far content below it would be pushed. Move what follows above it, or into the footer.") %}
+      {% endfor %}
+    {% endif %}
     {% set m = sigma_report.measure(block, content_w, gap) %}
     {% set flexible = m['flex'] > 0 %}
     {% set h = m['h'] %}
@@ -373,7 +405,8 @@
 {% set pad = '  ' * indent %}
 {% set lines = [] %}
 {% for p in placements %}
-  {% do lines.append(pad ~ '<Element elementId="' ~ p['element']['id'] ~ '" x="' ~ p['x'] ~ '" y="' ~ p['y'] ~ '" width="' ~ p['width'] ~ '" height="' ~ p['height'] ~ '"/>') %}
+  {% set flow_attr = (' flow="' ~ p['element']['_flow'] ~ '"') if p['element'].get('_flow') else '' %}
+  {% do lines.append(pad ~ '<Element elementId="' ~ p['element']['id'] ~ '" x="' ~ p['x'] ~ '" y="' ~ p['y'] ~ '" width="' ~ p['width'] ~ '" height="' ~ p['height'] ~ '"' ~ flow_attr ~ '/>') %}
 {% endfor %}
 {% do return(lines | join('\n')) %}
 {% endmacro %}

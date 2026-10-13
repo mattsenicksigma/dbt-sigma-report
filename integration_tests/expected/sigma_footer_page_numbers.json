@@ -1,0 +1,130 @@
+{
+  "contents": {
+    "config": {
+      "margin": 48,
+      "pageHeight": 1056,
+      "pageWidth": 816
+    },
+    "elements": [
+      {
+        "body": "<span style=\"font-size: 28px\">**Footer page numbers**</span>",
+        "id": "8bb28d92a7",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "direction": "horizontal",
+        "id": "43a257bc86",
+        "kind": "divider",
+        "style": {
+          "color": "#e5e5e5",
+          "strokeStyle": "solid",
+          "width": 1
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "Count()",
+            "id": "b03559bdec"
+          }
+        ],
+        "id": "e23575c8c7",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Orders"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "b03559bdec",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "body": "Confidential",
+        "id": "b9349e4345",
+        "kind": "text",
+        "verticalAlign": "top"
+      },
+      {
+        "body": "<p class=\"p-small\">{{CurrentPageNumber()}} of {{TotalPageCount()}}</p>",
+        "id": "7076efdc78",
+        "kind": "text",
+        "verticalAlign": "top"
+      }
+    ],
+    "kind": "report",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"8bb28d92a7\" x=\"0\" y=\"0\" width=\"720\" height=\"50\"/>\n  <Element elementId=\"43a257bc86\" x=\"0\" y=\"66\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"e23575c8c7\" x=\"0\" y=\"94\" width=\"720\" height=\"96\"/>\n</Page>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"b9349e4345\" x=\"0\" y=\"0\" width=\"563\" height=\"31\"/>\n  <Element elementId=\"7076efdc78\" x=\"579\" y=\"0\" width=\"141\" height=\"31\"/>\n</Panel>\n",
+    "pages": [
+      {
+        "id": "348e718e5d",
+        "name": "Summary"
+      }
+    ],
+    "panels": [
+      {
+        "config": {
+          "height": 32
+        },
+        "id": "e2a27834d6",
+        "pages": [
+          "348e718e5d"
+        ],
+        "title": "Footer",
+        "type": "footer"
+      }
+    ],
+    "schemaVersion": 1,
+    "settings": {
+      "theme": {
+        "name": "Light",
+        "overrides": {
+          "borderRadius": "round",
+          "categoricalScheme": "superbloom",
+          "colorOverrides": [
+            {
+              "color": "#ffffff",
+              "name": "backgroundCanvas"
+            }
+          ],
+          "colors": {
+            "danger": "#c10007",
+            "highlight": "#1A70F1",
+            "success": "#008236",
+            "surface": "#ffffff",
+            "text": "#0a0a0a",
+            "warning": "#bb4d00"
+          },
+          "fonts": {
+            "dataFont": "Inter",
+            "textFont": "Inter"
+          }
+        }
+      }
+    }
+  },
+  "folderId": "00000000-0000-0000-0000-000000000002",
+  "name": "Footer page numbers"
+}

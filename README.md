@@ -139,13 +139,17 @@ sigma_report.stack([sigma_report.flex(trend, weight=2), sigma_report.flex(mix), 
 
 ### Tables
 
-A Sigma table element has no pagination or row-limit setting: it is a window onto the first rows of its sort order, as many as its height shows, with the total row count in a summary bar. So the useful question is "how many rows", and the package answers it three ways. (Sigma also has an "Expand table rows" option that grows a table to all its rows at render time; it is a layout attribute rather than an element property, and a separate feature from the windows below.)
+A Sigma table element has no pagination or row-limit setting: it is a window onto the first rows of its sort order, as many as its height shows, with the total row count in a summary bar. So the useful question is "how many rows", and the package answers it four ways:
 
 - `table(..., rows=10)`: show 10 rows. The height follows (about 130px of title, header and summary bar plus 20px a row; both numbers are [settings](#project-settings)). `sort=` chooses which rows. `h='fill'` gives a table the rest of its page.
 - `table(..., window=[21, 40])`: show rows 21 to 40 of the sort order, using a hidden `RowNumber()` column and a range filter on it.
 - `table_pages(source, columns, rows_per_page=40, total_rows=200, name=..., sort=...)`: a table **over several pages** - one window per page with a page break between (so the page needs `paginate=true`). Each page's title reads "(page i of n)", and each summary bar still shows the true total. The compiler cannot see your data, so you say how many rows to cover (`total_rows=` or `pages=`); rows beyond that are not shown, so leave headroom. About 40 rows fill a Letter page.
 
-`simple_dashboard(..., table_columns=[...], table_sort=[...], table_page_count=3, table_rows=30)` does this for its detail table.
+- `table(..., paginate=true)`: Sigma's own **"Expand table rows"**: the table grows to every row when the report renders (up to 10,000), with no row count needed from you. The trade-off is that nothing is known at compile time about how far it will grow, so it must be the last block on its page and cannot sit in a row, stack or panel ([details below](#paginated-tables-and-page-numbers)). Checked in Sigma: a 70-row table continued onto a second page with the footer page number ("1 of 2", "2 of 2").
+
+**Which one?** Use `paginate=true` when the table is the last thing on the page and its length is unknown (a listing, a statement). Use `table_pages` when you need content after the table, fixed page boundaries or a known page count. Use `rows=` / `h='fill'` for a short "top N" table.
+
+`simple_dashboard(..., table_columns=[...], table_sort=[...], table_page_count=3, table_rows=30)` windows its detail table over pages; `table_paginate=true` expands it instead.
 
 ## Components
 
@@ -155,12 +159,14 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 | --- | --- |
 | Report | `report`, `page`, `materialize`, `filter_by_value` |
 | Layout | `row`, `stack`, `flex`, `at`, `page_break`, `grid`, `section`, `report_header` |
-| Elements | `kpi`, `table`, `table_pages`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image`, `embed`, `button`, `progress` |
+| Elements | `kpi`, `table`, `table_pages`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image`, `embed`, `button`, `progress`, `page_number` |
 | Charts | `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `combo_chart`, `waterfall_chart`, `box_chart`, `funnel_chart`, `gauge_chart`, `treemap_chart`, `sankey_chart`, `point_map`, `region_map`, `geography_map` |
 | Composites | `simple_dashboard`, `simple_leaderboard`, `kpi_row`, `kpi_from_spec`, `chart_from_spec`, `facts_line`, `bullet_list` |
 | Report presets | `simple_executive_summary`, `simple_period_review`, `simple_statement` |
 | Sources | `from_ref`, `from_source`, `from_data_model`, `warehouse_table`, `data_model`, `element` |
 | Fields | `field`, `format_currency`, `format_integer`, `format_percent`, `format_compact`, `format_number`, `format_date` |
+| Actions | `button`, `action`, `with_actions`, and effects: `set_control_value`, `clear_control`, `clear_controls`, `open_url`, `navigate`, `refresh_element`, `download`, `effect` |
+| Schedules | `schedule` (passed to `report(schedules=[...])`) |
 | Escape hatches | `extend`, `raw`, `channel_element` (build your own typed kind) |
 | Theme and settings | `theme`, `color`, `setting`; the `sigma_report_theme` and `sigma_report_settings` vars |
 
@@ -178,7 +184,7 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 ) %}
 ```
 
-Both take `report_args={...}`: any argument of `report()` (`page_size`, `orientation`, `margin`, `header`, `footer`, `theme`, `description`, `folder_id`, `report_id`).
+Both take `report_args={...}`: any argument of `report()` (`page_size`, `orientation`, `margin`, `header`, `footer`, `page_numbers`, `theme`, `description`, `folder_id`, `report_id`).
 
 KPI mappings take `value`, `name`, `format`, `compare_to` (compare against a target measure), `timeline` + `period` (compare the latest period with the one before), `trend` (sparkline), `direction` (`higher` / `lower` / `none`), `description`. Chart mappings take a `type` (`bar`, `line`, `area`, `scatter`, `pie`, `donut`, `combo`, `waterfall`, `box`, `funnel`, `gauge`, `treemap` or `sankey`) plus that chart macro's arguments (`x`, `y`, `color`, `sort_by`, `stacking`, `labels`, ...).
 
@@ -222,6 +228,18 @@ Whole documents from data alone, each a thin layer over the same public macros a
 
 Reports have no per-viewer filters, so `simple_statement` describes whatever its `source` holds: point it at a model already limited to one customer, and loop in dbt to make one per customer.
 
+### Paginated tables and page numbers
+
+A table's row count is not known when the report is compiled, so by default it gets a fixed height (see [Tables](#tables) for the options, including row windows). For a listing or a statement that can run to any length, ask for Sigma's "Expand table rows":
+
+```sql
+sigma_report.table(source, ['order_id', 'order_date', 'amount'], name='Orders', h=300, paginate=true)
+```
+
+The table (or `pivot_table`) then grows to hold all its rows when the report renders and continues onto further pages (up to 10,000 rows, vertically only); `h` is the height it starts with. It is emitted as `flow="paginated"` on the element's layout entry. Since the package cannot know how far it will grow, the rules are strict, and compile-time errors say so: a paginated element must be the **last block on its page**, cannot sit in a `row`, `stack` or panel, and anything you want "after" it belongs in the footer. `simple_dashboard(table_paginate=true)` does this for its detail table, and `simple_statement` is built around it.
+
+`report(page_numbers=true)` puts a "1 of 3" page number at the right of the footer on every page; with a footer of your own, its elements share the footer row with the number. For full control add `sigma_report.page_number()` (or `page_number('Page {page}')`) to your own footer row.
+
 ### Building your own
 
 `simple_dashboard` uses only public macros; when you outgrow it, write the same thing by hand. [`integration_tests/models/sigma_sales_report.sql`](integration_tests/models/sigma_sales_report.sql) is a runnable two-page example with header and footer panels, a pivot, a calculated column, a chart built on a table that is already on the page, and both escape hatches.
@@ -237,6 +255,45 @@ Reports have no controls, so a report cannot be filtered by whoever opens it. `f
 ```
 
 It adds a hidden column and a `list` filter on it to every element built on a warehouse table. Elements built on another element inherit the filter, text and dividers have no data, and the build fails if no element could be filtered, so a report is never left silently unscoped. Take the values from a project var (`[var('my_key')]`) to keep them out of the SQL.
+### Actions
+
+Sigma's request schema for reports takes an `actions` array on buttons, tables, controls, charts and KPIs: the same sequences workbooks have. An action is a trigger plus effects that run in order.
+
+```sql
+{% set refresh = sigma_report.button('Refresh', key='refresh', actions=[
+    sigma_report.action('on-click', [
+        sigma_report.refresh_element(orders),
+        sigma_report.navigate(page=notes),
+    ]),
+]) %}
+
+{# or onto an element you already built #}
+{% do sigma_report.with_actions(orders, [
+    sigma_report.action('on-select', [sigma_report.set_control_value('region-control', 'West')]),
+]) %}
+```
+
+Effects with no builder (`call-api`, `insert-rows`, `update-rows`, `send-embed-event`, `if-else`, ...) go through `effect('call-api', {...})` with Sigma's own fields. Action ids are derived from the element id, trigger and position (or `key=`), so they are stable across compiles. [`integration_tests/models/sigma_actions_report.sql`](integration_tests/models/sigma_actions_report.sql) is a runnable example.
+
+The schema accepts all of this (it is checked in CI). Whether a rendered, paginated report *runs* its actions is Sigma's behavior, not something the package can prove: check a real report after `--push --dry-run`.
+
+### Scheduled exports
+
+There is no scheduled trigger for actions, and a report's contents have no schedule field. Schedules are a separate Sigma resource (`/v2/reports/{id}/schedules`), and reports export only as a whole PDF. So `schedule(...)` is compiled as data, carried on the spec beside `contents`, and applied by the export script after the report exists:
+
+```sql
+{% set spec = sigma_report.report(
+    name='Sales report',
+    pages=[...],
+    schedules=[
+      sigma_report.schedule('Weekly sales', cron='0 8 * * 1', timezone='America/New_York',
+          to=['finance@example.com', {'teamId': '<your-team-id>'}],
+          message='This week''s numbers.', only_if_not_empty=orders),
+    ],
+) %}
+```
+
+`export_reports.py --push` creates each schedule, or updates the one with the same name (the title Sigma shows; renaming creates a new schedule). It never deletes schedules, and `--dry-run` doesn't touch them since Sigma has no dry run for them. `--out` writes them to `<model>.schedules.json`. Recipients are email addresses (strings) or Sigma target mappings used as written, such as `{'teamId': ...}` or `{'slackConversationId': ...}`. Sigma documents `slackConversationId` as a Slack channel ID or member ID: the schedule dialog also accepts a `#channel-name`, but the API docs don't say the API does, so use the ID. Anything the macro does not model (control values, attachment merging, a column condition) goes in `options={...}`, merged onto Sigma's `configV2`.
 
 ### Escape hatches
 
@@ -343,7 +400,7 @@ python dbt_packages/sigma_report/scripts/export_reports.py --push               
 
 The script needs only the Python standard library. Pushing needs [API credentials](https://help.sigmacomputing.com/docs/generate-api-client-credentials) in `SIGMA_BASE_URL` (your cloud's API URL), `SIGMA_CLIENT_ID` and `SIGMA_CLIENT_SECRET`.
 
-- First push creates the report (`POST /v2/reports`). Note the `reportId` Sigma returns and pass it as `report_id=` (or `report_args={'report_id': ...}`) from then on: the next push replaces that report's contents in place (`PUT /v2/reports/{id}/contents`), so the report keeps its URL, schedules and sharing.
+- First push creates the report (`POST /v2/reports`). Note the `reportId` Sigma returns and pass it as `report_id=` (or `report_args={'report_id': ...}`) from then on: the next push replaces that report's contents in place (`PUT /v2/reports/{id}/contents`), so the report keeps its URL, schedules and sharing. Any `schedules=` on the report are applied after the push (see [Scheduled exports](#scheduled-exports)).
 - `--dry-run` sends `dryRun: true`, which validates formulas, sources and layout without saving. Run it against your own organization after any change to what elements look like.
 - The script refuses to push an `unresolved:` data model id or the all-zero placeholder ids used in this repository's tests.
 
@@ -385,7 +442,8 @@ An initial version aimed at dashboards.
 
 - **Validated against Sigma's schema, not rendered in CI.** The request schema check, the geometry check and the golden files run in CI. CI has no Sigma credentials, so how a report *looks* in Sigma, and whether Sigma accepts the formulas against your data, is checked by `--push --dry-run` against your own organization. To *see* a report, push it and export it: `POST /v2/reports/{id}/export` returns a PDF. Panel sizing is an assumption: header and footer heights are subtracted from the content area, which is safe (no overlap) but may leave more white space than Sigma needs.
 - **Modeled elements**: KPI; bar, line, area, scatter, pie, donut, combo, waterfall, box, funnel, gauge, treemap and sankey charts; point, region and geography maps; table (with row windows and multi-page `table_pages`), pivot table; text, title, heading, divider, image, embed, button, progress. Not modeled (use [`raw`](#escape-hatches), which is validated against Sigma's schema): input tables, plugins, repeated containers, conditional formatting, reference marks, trellis. Verified by rendering a pushed report in Sigma: combo (with a secondary axis), treemap, funnel, waterfall, gauge, box, nested layouts, flexible heights, `at()` and a 90-row table over three pages. Sankey, the three maps, progress, button and embed are checked against Sigma's request schema in CI (and the compiled output of the others also passed Sigma's dry run), but not yet rendered.
-- **No controls.** Reports have no interactive controls in Sigma's code representation.
+- **No control macros.** Sigma's schema does have report controls (and actions can set them by id), but the package does not build them yet; use [`raw`](#escape-hatches).
+- **Schedule bodies are checked offline only** (cron, recipients, unique names, the element a condition tests). Sigma's schema check in CI covers a report's contents, not its schedules.
 - **Layout is a tree of rows and stacks, plus pinned elements.** There is no free-form drag layout; `at()` pins single elements, and anything else is a row or a stack. Overlap is only allowed for pinned elements declared `overlap=true`.
 - **Text height is an estimate.** It is computed from character counts and font size (generously, so text is not clipped); unusual fonts, very long unbroken words or `{{formula}}` segments can differ. Pin `h=` or tune `char_width` / `line_height` when it matters. The table row height (20px) and chrome (130px) were measured from a Sigma PDF export, not documented by Sigma, so they could shift - they are [settings](#project-settings).
 - **Multi-page tables need you to say how many pages.** `table_pages` slices the sort order into row windows (`RowNumber()` + a filter); the compiler cannot see your data, so rows beyond `total_rows` are not shown (each window's summary bar still shows the true total, so a shortfall is visible). A windowed table needs a deterministic `sort`.
