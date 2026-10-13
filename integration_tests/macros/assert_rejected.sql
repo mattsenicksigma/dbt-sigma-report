@@ -39,6 +39,12 @@
 {% macro assert_filter_bad_mode_rejected() %}{% do sigma_report.filter_by_value(sigma_report_integration_tests._filterable_spec(), 'region', ['West'], mode='maybe') %}{% endmacro %}
 {% macro assert_filter_nothing_to_filter_rejected() %}{% do sigma_report.filter_by_value(sigma_report.report(name='n', pages=[sigma_report.page('p', [sigma_report.divider()])]), 'region', ['West']) %}{% endmacro %}
 {% macro assert_filter_twice_rejected() %}{% do sigma_report.filter_by_value(sigma_report.filter_by_value(sigma_report_integration_tests._filterable_spec(), 'region', ['West']), 'region', ['East']) %}{% endmacro %}
+{% macro assert_last_days_without_date_column_rejected() %}{% do sigma_report.simple_dashboard(name='n', source=sigma_report_integration_tests._src(), kpis=[{'value': 'Count()', 'name': 'Orders', 'last_days': 7}]) %}{% endmacro %}
+{% macro assert_last_days_zero_rejected() %}{% do sigma_report.filter_last_days(sigma_report.kpi(sigma_report_integration_tests._src(), 'Count()', name='n'), 'order_date', 0) %}{% endmacro %}
+{% macro assert_last_days_fractional_rejected() %}{% do sigma_report.filter_last_days(sigma_report.kpi(sigma_report_integration_tests._src(), 'Count()', name='n'), 'order_date', 7.5) %}{% endmacro %}
+{% macro assert_last_days_twice_rejected() %}{% do sigma_report.filter_last_days(sigma_report.filter_last_days(sigma_report.kpi(sigma_report_integration_tests._src(), 'Count()', name='n'), 'order_date', 7), 'order_date', 3) %}{% endmacro %}
+{% macro assert_last_days_non_warehouse_rejected() %}{% do sigma_report.filter_last_days(sigma_report.divider(), 'order_date', 7) %}{% endmacro %}
+{% macro assert_table_and_pivot_rejected() %}{% do sigma_report.simple_dashboard(name='n', source=sigma_report_integration_tests._src(), table_columns=['region'], table_pivot={'rows': ['region'], 'values': ['Count()']}) %}{% endmacro %}
 {% macro assert_raw_protected_key_rejected() %}{% do sigma_report.raw('embed', 'e', {'kind': 'text'}) %}{% endmacro %}
 {% macro assert_unknown_chart_type_rejected() %}{% do sigma_report.chart_from_spec(sigma_report_integration_tests._src(), {'type': 'radar'}) %}{% endmacro %}
 {% macro assert_chart_spec_without_type_rejected() %}{% do sigma_report.chart_from_spec(sigma_report_integration_tests._src(), {'x': 'a'}) %}{% endmacro %}

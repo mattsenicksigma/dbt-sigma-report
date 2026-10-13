@@ -157,7 +157,7 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 
 | Layer | Macros |
 | --- | --- |
-| Report | `report`, `page`, `materialize`, `filter_by_value` |
+| Report | `report`, `page`, `materialize`, `filter_by_value`, `filter_last_days` |
 | Layout | `row`, `stack`, `flex`, `at`, `page_break`, `grid`, `section`, `report_header` |
 | Elements | `kpi`, `table`, `table_pages`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image`, `embed`, `button`, `progress`, `page_number` |
 | Charts | `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `combo_chart`, `waterfall_chart`, `box_chart`, `funnel_chart`, `gauge_chart`, `treemap_chart`, `sankey_chart`, `point_map`, `region_map`, `geography_map` |
@@ -255,6 +255,27 @@ Reports have no controls, so a report cannot be filtered by whoever opens it. `f
 ```
 
 It adds a hidden column and a `list` filter on it to every element built on a warehouse table. Elements built on another element inherit the filter, text and dividers have no data, and the build fails if no element could be filtered, so a report is never left silently unscoped. Take the values from a project var (`[var('my_key')]`) to keep them out of the SQL.
+### Rolling date windows
+
+A report has no date control, so "the last 7 days" has to be part of the element. `filter_last_days(element, column, days)` limits one chart, KPI or table to the last `days` days of a date column, measured from the day the report renders (Sigma evaluates `Today()` at render time, so a scheduled report never goes stale). It adds a hidden `If([Order Date] >= DateAdd("day", -7, Today()), 1, 0)` column and a `number-range` filter keeping 1. Elements you do not limit keep their full history, so one report can show an all-time trend next to a last-week breakdown.
+
+`simple_dashboard` exposes it as a key on each KPI, chart or pivot, plus the source's date field:
+
+```sql
+{% set spec = sigma_report.simple_dashboard(
+    name='Spend',
+    source=sigma_report.from_ref('daily_spend'),
+    date_column='activity_date',
+    kpis=[{'value': 'Sum([Usage Usd])', 'name': 'Spend past week', 'last_days': 7},
+          {'value': 'Sum([Usage Usd])', 'name': 'Spend past day', 'last_days': 1}],
+    charts=[{'type': 'line', 'x': 'activity_date', 'y': 'Sum([Usage Usd])', 'name': 'Daily spend'},
+            {'type': 'bar', 'x': 'model_id', 'y': 'Sum([Usage Usd])', 'name': 'Spend by model', 'last_days': 7}],
+    table_pivot={'rows': ['model_id', 'provider_name'], 'values': ['Sum([Usage Usd])', 'Sum([Requests])'], 'last_days': 7, 'h': 'fill'},
+) %}
+```
+
+`table_pivot` replaces the row-by-row detail table with a pivot, which totals by group. The window is the `days` calendar days up to now, so a source that lags a day shows through yesterday, and `last_days=1` is the most recent day only when the source is current. A `last_days` without `date_column`, a window on an element that is not built on a warehouse table, or the same column limited twice fails the build instead of leaving an element unscoped. It composes with `filter_by_value`.
+
 ### Actions
 
 Sigma's request schema for reports takes an `actions` array on buttons, tables, controls, charts and KPIs: the same sequences workbooks have. An action is a trigger plus effects that run in order.

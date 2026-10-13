@@ -479,9 +479,33 @@
 {% endmacro %}
 
 
+{% macro _check_last_days() %}
+{% set t = sigma_report_integration_tests %}
+{% set c = t._spec_of('sigma_last_days_dashboard').contents %}
+{% set windowed = [] %}
+{% for el in c.elements if el.get('source') %}
+  {% set shown = el.name.text if el.get('name') is mapping else el.get('name') %}
+  {% set ranges = [] %}
+  {% for f in el.get('filters', []) if f.kind == 'number-range' %}{% do ranges.append(f) %}{% endfor %}
+  {% if shown in ['Revenue past week', 'Revenue by region (week)', 'Week by region and segment'] %}
+    {% do windowed.append(shown) %}
+    {% do t._ok(ranges | length == 1 and ranges[0].min == 1 and ranges[0].max == 1, 'last_days: ' ~ shown ~ ' keeps rows flagged 1') %}
+    {% set flag = [] %}
+    {% for col in el.columns if col.id == ranges[0].columnId %}{% do flag.append(col) %}{% endfor %}
+    {% do t._ok(flag | length == 1 and flag[0].hidden is true and flag[0].formula.startswith('If([') and 'DateAdd("day", -7, Today())' in flag[0].formula and '/Order Date]' in flag[0].formula, 'last_days: ' ~ shown ~ ' is flagged by a hidden Order Date window column') %}
+  {% else %}
+    {% do t._ok(ranges | length == 0, 'last_days: ' ~ shown ~ ' is not date-limited') %}
+  {% endif %}
+  {% do t._ok(el.filters | selectattr('kind', 'equalto', 'list') | list | length == 1, 'last_days: ' ~ shown ~ ' still carries the filter_by_value filter') %}
+{% endfor %}
+{% do t._ok(windowed | length == 3, 'last_days: the KPI, the chart and the pivot are limited, and nothing else') %}
+{% do t._ok(t._find(c.elements, 'pivot-table', 'Week by region and segment') is not none, 'last_days: table_pivot builds a pivot table in place of the detail table') %}
+{% endmacro %}
+
+
 {% macro assert_reports() %}
 {% set t = sigma_report_integration_tests %}
-{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement', 'sigma_actions_report', 'sigma_paginated_tables', 'sigma_footer_page_numbers', 'sigma_filtered_dashboard'] %}
+{% for name in ['sigma_flexible_layout', 'sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source', 'preset_executive_summary', 'preset_period_review', 'preset_statement', 'sigma_actions_report', 'sigma_paginated_tables', 'sigma_footer_page_numbers', 'sigma_filtered_dashboard', 'sigma_last_days_dashboard'] %}
   {% do t._check_report(name) %}
 {% endfor %}
 {% do t._check_simple() %}
@@ -495,6 +519,7 @@
 {% do t._check_pagination() %}
 {% do t._check_sources() %}
 {% do t._check_filtered() %}
+{% do t._check_last_days() %}
 {% do t._check_actions() %}
 {{ log('all assertions passed', info=True) }}
 {% endmacro %}

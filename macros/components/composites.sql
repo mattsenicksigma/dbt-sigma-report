@@ -142,23 +142,28 @@
    `table_rows` rows each instead - see `table_pages` - or `table_paginate=true` to let Sigma expand the
    table to all its rows when the report renders (it must then be the last block). Content that does not
    fit one page continues on the next
-   (`paginate=true`). Pass `show_title=false` to leave out the title, subtitle and rule (the report is still
+   (`paginate=true`). Give `date_column='order_date'` and put `'last_days': 7` on a KPI, chart or pivot mapping
+   to limit just that element to the last 7 days (see `filter_last_days`); `table_pivot={'rows': [...],
+   'values': [...]}` replaces the detail table with a pivot (totals by group, not row by row). Pass `show_title=false` to leave out the title, subtitle and rule (the report is still
    named `name`). Pass any `sigma_report.report()` argument through `report_args`
    (page_size, orientation, margin, header, footer, theme, ...). The result is a finished report spec,
    ready for `sigma_report.materialize()`.
 
    It is built from the public macros only; when you outgrow it, write the same thing by hand with
    `page()` and `row()`. #}
-{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_rows=none, table_h=none, table_page_count=none, table_paginate=false, table_sort=[], show_title=true, report_args={}) %}
+{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_rows=none, table_h=none, table_page_count=none, table_paginate=false, table_sort=[], show_title=true, date_column=none, table_pivot=none, report_args={}) %}
 {% set blocks = sigma_report.report_header(name, subtitle) if show_title else [] %}
+{% if table_columns and table_pivot %}
+  {% do sigma_report.fail('simple_dashboard', "give `table_columns` or `table_pivot`, not both.") %}
+{% endif %}
 {% if kpis %}
   {% set tiles = [] %}
-  {% for spec in kpis %}{% do tiles.append(sigma_report.kpi_from_spec(source, spec)) %}{% endfor %}
+  {% for spec in kpis %}{% do tiles.append(sigma_report._limit_last_days(sigma_report.kpi_from_spec(source, spec), spec, date_column)) %}{% endfor %}
   {% do blocks.append(sigma_report.kpi_row(tiles)) %}
 {% endif %}
 {% if charts %}
   {% set figures = [] %}
-  {% for spec in charts %}{% do figures.append(sigma_report.chart_from_spec(source, spec)) %}{% endfor %}
+  {% for spec in charts %}{% do figures.append(sigma_report._limit_last_days(sigma_report.chart_from_spec(source, spec), spec, date_column)) %}{% endfor %}
   {% for r in sigma_report.grid(figures, per_row=charts_per_row) %}{% do blocks.append(r) %}{% endfor %}
 {% endif %}
 {% if table_columns and table_page_count %}
@@ -167,8 +172,23 @@
   {% for b in sigma_report.table_pages(source, table_columns, sigma_report.setting('table_rows', table_rows), pages=table_page_count, name=table_name, sort=table_sort) %}{% do blocks.append(b) %}{% endfor %}
 {% elif table_columns %}
   {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, rows=table_rows, h=table_h, sort=table_sort, paginate=table_paginate)) %}
+{% elif table_pivot %}
+  {% if table_pivot is not mapping or 'values' not in table_pivot %}
+    {% do sigma_report.fail('simple_dashboard', "`table_pivot` is a mapping with at least `values` and `rows` or `cols`, got " ~ table_pivot) %}
+  {% endif %}
+  {% do blocks.append(sigma_report._limit_last_days(sigma_report.pivot_table(source, table_pivot['values'], rows=table_pivot.get('rows'), cols=table_pivot.get('cols'), name=table_pivot.get('name', table_name), key=table_pivot.get('key'), h=table_pivot.get('h', table_h)), table_pivot, date_column)) %}
 {% endif %}
 {% do return(sigma_report.report_from_args(name, blocks, report_args)) %}
+{% endmacro %}
+
+
+{# `simple_dashboard`'s `last_days` key: limits the element to the last N days of `date_column`. #}
+{% macro _limit_last_days(element, spec, date_column) %}
+{% if spec.get('last_days') is none %}{% do return(element) %}{% endif %}
+{% if not date_column %}
+  {% do sigma_report.fail('simple_dashboard', "`last_days` on '" ~ (spec.get('name') or spec.get('type') or 'an element') ~ "' needs `date_column=` (the source's date field).") %}
+{% endif %}
+{% do return(sigma_report.filter_last_days(element, date_column, spec['last_days'])) %}
 {% endmacro %}
 
 

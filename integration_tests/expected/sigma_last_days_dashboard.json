@@ -1,0 +1,428 @@
+{
+  "contents": {
+    "config": {
+      "margin": 48,
+      "pageHeight": 1056,
+      "pageWidth": 816
+    },
+    "elements": [
+      {
+        "body": "<span style=\"font-size: 28px\">**Recent sales**</span>",
+        "id": "f5a29c7008",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "direction": "horizontal",
+        "id": "42ea3d630f",
+        "kind": "divider",
+        "style": {
+          "color": "#e5e5e5",
+          "strokeStyle": "solid",
+          "width": 1
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "Sum([Amount])",
+            "id": "31bb510f86"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "271652d713"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "hidden": true,
+            "id": "fa1a3ecb71"
+          }
+        ],
+        "filters": [
+          {
+            "columnId": "fa1a3ecb71",
+            "id": "2f1968716d",
+            "kind": "list",
+            "mode": "include",
+            "values": [
+              "West",
+              "East"
+            ]
+          }
+        ],
+        "id": "83464a9bf5",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Revenue"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "31bb510f86",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "Sum([Amount])",
+            "id": "ffd888212e"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "a1fcdeeff2"
+          },
+          {
+            "formula": "If([stg_orders/Order Date] >= DateAdd(\"day\", -7, Today()), 1, 0)",
+            "hidden": true,
+            "id": "a481bd792b"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "hidden": true,
+            "id": "dee35ce155"
+          }
+        ],
+        "filters": [
+          {
+            "columnId": "a481bd792b",
+            "id": "665d26557f",
+            "kind": "number-range",
+            "max": 1,
+            "min": 1
+          },
+          {
+            "columnId": "dee35ce155",
+            "id": "fe51f5cfed",
+            "kind": "list",
+            "mode": "include",
+            "values": [
+              "West",
+              "East"
+            ]
+          }
+        ],
+        "id": "a57ec72010",
+        "kind": "kpi-chart",
+        "layout": {
+          "anchor": "left",
+          "verticalAnchor": "top"
+        },
+        "name": {
+          "color": "#737373",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "text": "Revenue past week"
+        },
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "value": {
+          "color": "#0a0a0a",
+          "columnId": "ffd888212e",
+          "fontWeight": "bold"
+        }
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#4f39f6"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "2d105a3aba"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "db74429bb6"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "ffe512e993"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "hidden": true,
+            "id": "017e376e6a"
+          }
+        ],
+        "filters": [
+          {
+            "columnId": "017e376e6a",
+            "id": "6349438518",
+            "kind": "list",
+            "mode": "include",
+            "values": [
+              "West",
+              "East"
+            ]
+          }
+        ],
+        "id": "ed2e727998",
+        "kind": "line-chart",
+        "name": "Revenue by day",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "2d105a3aba",
+          "sort": {
+            "by": "2d105a3aba",
+            "direction": "ascending"
+          }
+        },
+        "yAxis": {
+          "columnIds": [
+            "db74429bb6"
+          ]
+        }
+      },
+      {
+        "color": {
+          "by": "single",
+          "value": "#4f39f6"
+        },
+        "columns": [
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "62ab9cb87c"
+          },
+          {
+            "formula": "Sum([Amount])",
+            "id": "bfe197e2c4"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "4324a50e01"
+          },
+          {
+            "formula": "If([stg_orders/Order Date] >= DateAdd(\"day\", -7, Today()), 1, 0)",
+            "hidden": true,
+            "id": "b78486ece7"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "hidden": true,
+            "id": "09ee11be5d"
+          }
+        ],
+        "filters": [
+          {
+            "columnId": "b78486ece7",
+            "id": "596ef72c31",
+            "kind": "number-range",
+            "max": 1,
+            "min": 1
+          },
+          {
+            "columnId": "09ee11be5d",
+            "id": "245c6e3d80",
+            "kind": "list",
+            "mode": "include",
+            "values": [
+              "West",
+              "East"
+            ]
+          }
+        ],
+        "id": "410389557a",
+        "kind": "bar-chart",
+        "name": "Revenue by region (week)",
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "xAxis": {
+          "columnId": "62ab9cb87c",
+          "sort": {
+            "by": "bfe197e2c4",
+            "direction": "descending"
+          }
+        },
+        "yAxis": {
+          "columnIds": [
+            "bfe197e2c4"
+          ]
+        }
+      },
+      {
+        "columns": [
+          {
+            "formula": "Sum([Amount])",
+            "id": "aa78dfc9e6"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "a2a5e136cc"
+          },
+          {
+            "formula": "Count()",
+            "id": "228a42585e"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "e7dfd636a0"
+          },
+          {
+            "formula": "[stg_orders/Segment]",
+            "id": "9fc7e31f01"
+          },
+          {
+            "formula": "If([stg_orders/Order Date] >= DateAdd(\"day\", -7, Today()), 1, 0)",
+            "hidden": true,
+            "id": "7643ea8c1c"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "hidden": true,
+            "id": "126f6a16fc"
+          }
+        ],
+        "filters": [
+          {
+            "columnId": "7643ea8c1c",
+            "id": "79ef85ae0d",
+            "kind": "number-range",
+            "max": 1,
+            "min": 1
+          },
+          {
+            "columnId": "126f6a16fc",
+            "id": "baeef120ed",
+            "kind": "list",
+            "mode": "include",
+            "values": [
+              "West",
+              "East"
+            ]
+          }
+        ],
+        "id": "63ad605ef0",
+        "kind": "pivot-table",
+        "name": "Week by region and segment",
+        "rowsBy": [
+          {
+            "columnId": "e7dfd636a0"
+          },
+          {
+            "columnId": "9fc7e31f01"
+          }
+        ],
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        },
+        "values": [
+          "aa78dfc9e6",
+          "228a42585e"
+        ]
+      }
+    ],
+    "kind": "report",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"402a8c500f\">\n  <Element elementId=\"f5a29c7008\" x=\"0\" y=\"0\" width=\"720\" height=\"50\"/>\n  <Element elementId=\"42ea3d630f\" x=\"0\" y=\"66\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"94\" width=\"352\" height=\"96\"/>\n  <Element elementId=\"a57ec72010\" x=\"368\" y=\"94\" width=\"352\" height=\"96\"/>\n  <Element elementId=\"ed2e727998\" x=\"0\" y=\"206\" width=\"352\" height=\"260\"/>\n  <Element elementId=\"410389557a\" x=\"368\" y=\"206\" width=\"352\" height=\"260\"/>\n  <Element elementId=\"63ad605ef0\" x=\"0\" y=\"482\" width=\"720\" height=\"478\"/>\n</Page>\n",
+    "pages": [
+      {
+        "id": "402a8c500f",
+        "name": "Recent sales"
+      }
+    ],
+    "schemaVersion": 1,
+    "settings": {
+      "theme": {
+        "name": "Light",
+        "overrides": {
+          "borderRadius": "round",
+          "categoricalScheme": "superbloom",
+          "colorOverrides": [
+            {
+              "color": "#ffffff",
+              "name": "backgroundCanvas"
+            }
+          ],
+          "colors": {
+            "danger": "#c10007",
+            "highlight": "#1A70F1",
+            "success": "#008236",
+            "surface": "#ffffff",
+            "text": "#0a0a0a",
+            "warning": "#bb4d00"
+          },
+          "fonts": {
+            "dataFont": "Inter",
+            "textFont": "Inter"
+          }
+        }
+      }
+    }
+  },
+  "folderId": "00000000-0000-0000-0000-000000000002",
+  "name": "Recent sales"
+}
