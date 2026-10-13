@@ -54,6 +54,9 @@ macros:
       - name: schedules
         type: list[any]
         description: "`schedule(...)` results: scheduled PDF exports, carried on the spec beside `contents` and applied by the export script."
+      - name: page_numbers
+        type: bool
+        description: "A {page} of {total} page number at the right of the footer on every page."
   - name: page
     description: "One page of a report: a name and the blocks (elements and rows) stacked on it, top to bottom. With `paginate=true` it continues onto further physical pages when it is taller than one."
     arguments:
@@ -95,6 +98,9 @@ macros:
       - name: pad
         type: int
         description: "Trailing empty weight, so a short row keeps the cell width of the rows above it."
+      - name: lead
+        type: any
+        description: "Empty weight before the first child, so a single element can sit at the right of the page."
   - name: stack
     description: "A vertical group of blocks (elements, rows, stacks). Children keep their natural heights; flexible ones share any extra."
     arguments:
@@ -729,6 +735,9 @@ macros:
       - name: style
         type: any
         description: "Overrides the default card look (a Sigma `style` mapping)."
+      - name: paginate
+        type: bool
+        description: "Sigma's Expand table rows: the table grows to all its rows at render time. It must be the last block on its page and cannot sit in a row, stack or panel."
   - name: table_height
     description: "The height of a table showing a given number of rows, measured from Sigma's PDF export."
     arguments:
@@ -768,6 +777,9 @@ macros:
       - name: style
         type: any
         description: "Overrides the default card look (a Sigma `style` mapping)."
+      - name: paginate
+        type: bool
+        description: "Expand the pivot to all its rows at render time; same rules as a paginated table."
   - name: text
     description: "A markdown text element."
     arguments:
@@ -1451,12 +1463,15 @@ macros:
       - name: table_page_count
         type: int
         description: "Run the detail table over this many pages of `table_rows` rows (needs `table_sort`)."
+      - name: table_paginate
+        type: bool
+        description: "Let Sigma expand the detail table to all its rows (it is then the last block on its page)."
       - name: table_sort
         type: list[any]
         description: "Sort for the detail table: fields or (field, 'asc'|'desc') pairs."
       - name: report_args
         type: dict[string,any]
-        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers, schedules."
   - name: simple_leaderboard
     description: "A ranking report: a KPI for the overall measure and one ranked horizontal bar chart per dimension. Returns a finished report spec."
     arguments:
@@ -1486,7 +1501,7 @@ macros:
         description: "Height of each ranked bar chart in pixels."
       - name: report_args
         type: dict[string,any]
-        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers, schedules."
 
   # ------------------------------------------------------------ presets
   - name: facts_line
@@ -1539,7 +1554,7 @@ macros:
         description: "Height of the chart in pixels."
       - name: report_args
         type: dict[string,any]
-        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers, schedules."
   - name: simple_period_review
     description: "A recurring period review: KPIs compared with the previous period, a trend, a breakdown per dimension and notes. Returns a finished report spec."
     arguments:
@@ -1578,9 +1593,9 @@ macros:
         description: "Height of each breakdown chart in pixels."
       - name: report_args
         type: dict[string,any]
-        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers, schedules."
   - name: simple_statement
-    description: "A statement or invoice: a facts line, a line-item table, a totals band and a footer note. Returns a finished report spec."
+    description: "A statement or invoice: a facts line, a totals band, a paginated line-item table (it grows to any length at render time) and a footer note, with page numbers. Returns a finished report spec."
     arguments:
       - name: name
         type: string
@@ -1605,7 +1620,7 @@ macros:
         description: "Name of the line-item table."
       - name: rows_h
         type: int
-        description: "Height reserved for the table in pixels; a block must fit on one page."
+        description: "Height the line-item table starts with, in pixels; it grows to its rows at render time."
       - name: rows_sort
         type: list[any]
         description: "Table sort: a field, or a (field, asc|desc) pair, per item."
@@ -1614,7 +1629,7 @@ macros:
         description: "Muted text under the title."
       - name: report_args
         type: dict[string,any]
-        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height."
+        description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers, schedules."
 
   # ------------------------------------------------------------ theme
   - name: theme
@@ -1892,3 +1907,15 @@ macros:
       - name: options
         type: dict[string,any]
         description: "Sigma's own `configV2` fields, deep-merged on (control values, attachment settings, ...)."
+  - name: page_number
+    description: "A page number: Sigma's dynamic text with the current page and the page count, for a footer. Fixed height, since the formulas are short once rendered."
+    arguments:
+      - name: format
+        type: string
+        description: "Uses {page} and/or {total}; default '{page} of {total}'."
+      - name: key
+        type: string
+        description: "Identity for the element's id."
+      - name: h
+        type: any
+        description: "Height in pixels (default 24)."

@@ -139,13 +139,17 @@ sigma_report.stack([sigma_report.flex(trend, weight=2), sigma_report.flex(mix), 
 
 ### Tables
 
-A Sigma table element has no pagination or row-limit setting: it is a window onto the first rows of its sort order, as many as its height shows, with the total row count in a summary bar. So the useful question is "how many rows", and the package answers it three ways. (Sigma also has an "Expand table rows" option that grows a table to all its rows at render time; it is a layout attribute rather than an element property, and a separate feature from the windows below.)
+A Sigma table element has no pagination or row-limit setting: it is a window onto the first rows of its sort order, as many as its height shows, with the total row count in a summary bar. So the useful question is "how many rows", and the package answers it four ways:
 
 - `table(..., rows=10)`: show 10 rows. The height follows (about 130px of title, header and summary bar plus 20px a row; both numbers are [settings](#project-settings)). `sort=` chooses which rows. `h='fill'` gives a table the rest of its page.
 - `table(..., window=[21, 40])`: show rows 21 to 40 of the sort order, using a hidden `RowNumber()` column and a range filter on it.
 - `table_pages(source, columns, rows_per_page=40, total_rows=200, name=..., sort=...)`: a table **over several pages** - one window per page with a page break between (so the page needs `paginate=true`). Each page's title reads "(page i of n)", and each summary bar still shows the true total. The compiler cannot see your data, so you say how many rows to cover (`total_rows=` or `pages=`); rows beyond that are not shown, so leave headroom. About 40 rows fill a Letter page.
 
-`simple_dashboard(..., table_columns=[...], table_sort=[...], table_page_count=3, table_rows=30)` does this for its detail table.
+- `table(..., paginate=true)`: Sigma's own **"Expand table rows"**: the table grows to every row when the report renders (up to 10,000), with no row count needed from you. The trade-off is that nothing is known at compile time about how far it will grow, so it must be the last block on its page and cannot sit in a row, stack or panel ([details below](#paginated-tables-and-page-numbers)). Checked in Sigma: a 70-row table continued onto a second page with the footer page number ("1 of 2", "2 of 2").
+
+**Which one?** Use `paginate=true` when the table is the last thing on the page and its length is unknown (a listing, a statement). Use `table_pages` when you need content after the table, fixed page boundaries or a known page count. Use `rows=` / `h='fill'` for a short "top N" table.
+
+`simple_dashboard(..., table_columns=[...], table_sort=[...], table_page_count=3, table_rows=30)` windows its detail table over pages; `table_paginate=true` expands it instead.
 
 ## Components
 
@@ -155,7 +159,7 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 | --- | --- |
 | Report | `report`, `page`, `materialize` |
 | Layout | `row`, `stack`, `flex`, `at`, `page_break`, `grid`, `section`, `report_header` |
-| Elements | `kpi`, `table`, `table_pages`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image`, `embed`, `button`, `progress` |
+| Elements | `kpi`, `table`, `table_pages`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image`, `embed`, `button`, `progress`, `page_number` |
 | Charts | `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `combo_chart`, `waterfall_chart`, `box_chart`, `funnel_chart`, `gauge_chart`, `treemap_chart`, `sankey_chart`, `point_map`, `region_map`, `geography_map` |
 | Composites | `simple_dashboard`, `simple_leaderboard`, `kpi_row`, `kpi_from_spec`, `chart_from_spec`, `facts_line`, `bullet_list` |
 | Report presets | `simple_executive_summary`, `simple_period_review`, `simple_statement` |
@@ -180,7 +184,7 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 ) %}
 ```
 
-Both take `report_args={...}`: any argument of `report()` (`page_size`, `orientation`, `margin`, `header`, `footer`, `theme`, `description`, `folder_id`, `report_id`).
+Both take `report_args={...}`: any argument of `report()` (`page_size`, `orientation`, `margin`, `header`, `footer`, `page_numbers`, `theme`, `description`, `folder_id`, `report_id`).
 
 KPI mappings take `value`, `name`, `format`, `compare_to` (compare against a target measure), `timeline` + `period` (compare the latest period with the one before), `trend` (sparkline), `direction` (`higher` / `lower` / `none`), `description`. Chart mappings take a `type` (`bar`, `line`, `area`, `scatter`, `pie`, `donut`, `combo`, `waterfall`, `box`, `funnel`, `gauge`, `treemap` or `sankey`) plus that chart macro's arguments (`x`, `y`, `color`, `sort_by`, `stacking`, `labels`, ...).
 
@@ -223,6 +227,18 @@ Whole documents from data alone, each a thin layer over the same public macros a
 ```
 
 Reports have no per-viewer filters, so `simple_statement` describes whatever its `source` holds: point it at a model already limited to one customer, and loop in dbt to make one per customer.
+
+### Paginated tables and page numbers
+
+A table's row count is not known when the report is compiled, so by default it gets a fixed height (see [Tables](#tables) for the options, including row windows). For a listing or a statement that can run to any length, ask for Sigma's "Expand table rows":
+
+```sql
+sigma_report.table(source, ['order_id', 'order_date', 'amount'], name='Orders', h=300, paginate=true)
+```
+
+The table (or `pivot_table`) then grows to hold all its rows when the report renders and continues onto further pages (up to 10,000 rows, vertically only); `h` is the height it starts with. It is emitted as `flow="paginated"` on the element's layout entry. Since the package cannot know how far it will grow, the rules are strict, and compile-time errors say so: a paginated element must be the **last block on its page**, cannot sit in a `row`, `stack` or panel, and anything you want "after" it belongs in the footer. `simple_dashboard(table_paginate=true)` does this for its detail table, and `simple_statement` is built around it.
+
+`report(page_numbers=true)` puts a "1 of 3" page number at the right of the footer on every page; with a footer of your own, its elements share the footer row with the number. For full control add `sigma_report.page_number()` (or `page_number('Page {page}')`) to your own footer row.
 
 ### Building your own
 

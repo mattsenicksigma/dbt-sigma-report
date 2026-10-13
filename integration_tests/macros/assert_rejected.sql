@@ -113,6 +113,22 @@
 {% macro assert_statement_without_columns_rejected() %}{% do sigma_report.simple_statement('r', sigma_report_integration_tests._src(), []) %}{% endmacro %}
 {% macro assert_bad_facts_rejected() %}{% do sigma_report.facts_line(['owner']) %}{% endmacro %}
 
+{# ---- pagination and page numbers ---- #}
+{% macro assert_paginated_in_row_rejected() %}{% do sigma_report.row([sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='t', paginate=true)]) %}{% endmacro %}
+{% macro assert_paginated_in_stack_rejected() %}{% do sigma_report.stack([sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='t', paginate=true)]) %}{% endmacro %}
+{% macro assert_paginated_not_last_rejected() %}
+{% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='t', paginate=true), sigma_report.divider('after')])]) %}
+{% endmacro %}
+{% macro assert_paginated_in_footer_rejected() %}
+{% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a')])], footer=[sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='t', paginate=true)]) %}
+{% endmacro %}
+{% macro assert_page_numbers_with_footer_row_rejected() %}
+{% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a')])], footer=[sigma_report.row([sigma_report.divider('f')])], page_numbers=true) %}
+{% endmacro %}
+{% macro assert_bad_page_number_format_rejected() %}{% do sigma_report.page_number('nothing to see') %}{% endmacro %}
+{% macro assert_statement_footer_conflict_rejected() %}
+{% do sigma_report.simple_statement('r', sigma_report_integration_tests._src(), ['a'], footer_note='n', report_args={'footer': [sigma_report.divider('f')]}) %}
+{% endmacro %}
 {# ---- actions and schedules ---- #}
 {% macro assert_unknown_trigger_rejected() %}{% do sigma_report.action('on-hover', [sigma_report.refresh_element('e')]) %}{% endmacro %}
 {% macro assert_action_without_effects_rejected() %}{% do sigma_report.action('on-click', []) %}{% endmacro %}
