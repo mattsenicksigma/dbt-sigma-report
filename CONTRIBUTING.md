@@ -17,6 +17,8 @@ CI runs the suite on dbt 1.x and dbt 2.x, and both must pass. [`AGENTS.md`](AGEN
 
 - Adding, renaming or removing a macro argument: update [`macros/schema.yml`](macros/schema.yml), or the build fails.
 - Adding an element: follow "Adding an element" in [`docs/design.md`](docs/design.md), then use it in an integration report and assert on it.
+- A new size, margin, font size or calibration number is a project setting (`macros/core/settings.sql`), not a literal in a macro.
+- After refreshing the bundled Sigma schema, run `python scripts/generate_kinds.py` (CI fails on a stale `kinds.sql`).
 - Expected compile errors get a negative test in `assert_rejected.sql` and a line in `negative_cases.txt`.
 - If the change alters the emitted JSON, run `UPDATE_GOLDEN=1 bash scripts/run_integration_tests_duckdb.sh` and review the golden diff.
 - If the change alters what elements look like, run `python scripts/export_reports.py --push --dry-run` against a Sigma organization and mention the result in the PR.

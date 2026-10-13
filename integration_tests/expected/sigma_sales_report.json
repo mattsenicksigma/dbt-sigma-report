@@ -7,7 +7,7 @@
     },
     "elements": [
       {
-        "body": "# Sales summary\n\n<span style=\"color: #737373\">Hand-assembled from primitives</span>",
+        "body": "<span style=\"font-size: 28px\">**Sales summary**</span>\n\n<span style=\"color: #737373\">Hand-assembled from primitives</span>",
         "id": "95803d8335",
         "kind": "text",
         "verticalAlign": "center"
@@ -267,7 +267,7 @@
         }
       },
       {
-        "body": "### Mix",
+        "body": "<span style=\"font-size: 20px\">**Mix**</span>",
         "id": "358cf4205e",
         "kind": "text",
         "verticalAlign": "center"
@@ -324,7 +324,7 @@
         ]
       },
       {
-        "body": "### Order detail",
+        "body": "<span style=\"font-size: 20px\">**Order detail**</span>",
         "id": "7a4d677b96",
         "kind": "text",
         "verticalAlign": "center"
@@ -455,7 +455,7 @@
       }
     ],
     "kind": "report",
-    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"95803d8335\" x=\"0\" y=\"0\" width=\"714\" height=\"64\"/>\n  <Element elementId=\"e135b18586\" x=\"0\" y=\"80\" width=\"714\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"108\" width=\"232\" height=\"96\"/>\n  <Element elementId=\"e23575c8c7\" x=\"0\" y=\"220\" width=\"232\" height=\"96\"/>\n  <Element elementId=\"0dff74f759\" x=\"248\" y=\"108\" width=\"466\" height=\"260\"/>\n  <Element elementId=\"f30a28e7de\" x=\"0\" y=\"384\" width=\"714\" height=\"200\"/>\n  <Element elementId=\"358cf4205e\" x=\"0\" y=\"600\" width=\"714\" height=\"32\"/>\n  <Element elementId=\"524d2d67d0\" x=\"0\" y=\"648\" width=\"714\" height=\"300\"/>\n</Page>\n<Page id=\"ca5678930d\">\n  <Element elementId=\"7a4d677b96\" x=\"0\" y=\"0\" width=\"714\" height=\"32\"/>\n  <Element elementId=\"3f0a211ee4\" x=\"0\" y=\"48\" width=\"714\" height=\"420\"/>\n  <Element elementId=\"0ba5b04c05\" x=\"0\" y=\"484\" width=\"714\" height=\"260\"/>\n  <Element elementId=\"d67e57499a\" x=\"0\" y=\"760\" width=\"714\" height=\"120\"/>\n</Page>\n<Panel id=\"fbd84231ed\" type=\"header\">\n  <Element elementId=\"8249016466\" x=\"0\" y=\"0\" width=\"523\" height=\"32\"/>\n  <Element elementId=\"e7fce055be\" x=\"539\" y=\"0\" width=\"175\" height=\"32\"/>\n</Panel>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"b9349e4345\" x=\"0\" y=\"0\" width=\"714\" height=\"24\"/>\n</Panel>\n",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"95803d8335\" x=\"0\" y=\"0\" width=\"714\" height=\"75\"/>\n  <Element elementId=\"e135b18586\" x=\"0\" y=\"91\" width=\"714\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"119\" width=\"232\" height=\"96\"/>\n  <Element elementId=\"e23575c8c7\" x=\"0\" y=\"231\" width=\"232\" height=\"96\"/>\n  <Element elementId=\"0dff74f759\" x=\"248\" y=\"119\" width=\"466\" height=\"260\"/>\n  <Element elementId=\"f30a28e7de\" x=\"0\" y=\"395\" width=\"714\" height=\"180\"/>\n  <Element elementId=\"358cf4205e\" x=\"0\" y=\"591\" width=\"714\" height=\"39\"/>\n  <Element elementId=\"524d2d67d0\" x=\"0\" y=\"646\" width=\"714\" height=\"300\"/>\n</Page>\n<Page id=\"ca5678930d\">\n  <Element elementId=\"7a4d677b96\" x=\"0\" y=\"0\" width=\"714\" height=\"39\"/>\n  <Element elementId=\"3f0a211ee4\" x=\"0\" y=\"55\" width=\"714\" height=\"420\"/>\n  <Element elementId=\"0ba5b04c05\" x=\"0\" y=\"491\" width=\"714\" height=\"260\"/>\n  <Element elementId=\"d67e57499a\" x=\"0\" y=\"767\" width=\"714\" height=\"120\"/>\n</Page>\n<Panel id=\"fbd84231ed\" type=\"header\">\n  <Element elementId=\"8249016466\" x=\"0\" y=\"0\" width=\"523\" height=\"32\"/>\n  <Element elementId=\"e7fce055be\" x=\"539\" y=\"0\" width=\"175\" height=\"32\"/>\n</Panel>\n<Panel id=\"e2a27834d6\" type=\"footer\">\n  <Element elementId=\"b9349e4345\" x=\"0\" y=\"0\" width=\"714\" height=\"24\"/>\n</Panel>\n",
     "pages": [
       {
         "id": "348e718e5d",
@@ -505,7 +505,7 @@
           ],
           "colorOverrides": [
             {
-              "color": "#fafafa",
+              "color": "#ffffff",
               "name": "backgroundCanvas"
             }
           ],

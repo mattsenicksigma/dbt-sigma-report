@@ -43,6 +43,10 @@ echo "4. Asserting the shape of every compiled report..."
 $DBT run-operation assert_reports
 
 echo ""
+echo "4b. Checking the element-kind registry matches Sigma's schema..."
+"$PYTHON" "$REPO_ROOT/scripts/generate_kinds.py" --check
+
+echo ""
 echo "5. Exporting specs from the manifest, then checking them offline and on the page..."
 OUT_DIR="$(mktemp -d)"
 LOG="$(mktemp)"
@@ -130,6 +134,16 @@ OVERRIDE="{sigma_connection_id: connection-from-a-vars-override, sigma_folder_id
 $DBT run-operation assert_reports --vars "$OVERRIDE" > "$LOG" 2>&1 || { cat "$LOG"; exit 1; }
 grep -q "all assertions passed" "$LOG" || { echo "assert_reports did not report success under the override:"; cat "$LOG"; exit 1; }
 echo "  assertions passed with the connection, folder and data model ids overridden."
+
+echo ""
+echo "9. Re-running with project settings overridden (sigma_report_settings)..."
+# Every size and calibration constant the package would otherwise hard-code is a project setting. The
+# override changes margin, page size, chart / KPI heights and the title size for every report at once;
+# assert_settings checks they all took effect, and that a per-call argument still wins.
+SETTINGS="{sigma_report_settings: {margin: 20, page_size: a4, chart_h: 111, kpi_h: 77, title_size: 40}}"
+$DBT run-operation assert_settings --vars "$SETTINGS" > "$LOG" 2>&1 || { cat "$LOG"; exit 1; }
+grep -q "settings assertions passed" "$LOG" || { echo "assert_settings did not report success:"; cat "$LOG"; exit 1; }
+echo "  settings assertions passed."
 
 echo ""
 echo "=== All tests passed! ==="
