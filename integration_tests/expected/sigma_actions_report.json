@@ -107,7 +107,7 @@
         "text": "Reset filters"
       },
       {
-        "body": "### Orders",
+        "body": "<span style=\"font-size: 20px\">**Orders**</span>",
         "id": "5186c25f6d",
         "kind": "text",
         "verticalAlign": "center"
@@ -176,7 +176,7 @@
       }
     ],
     "kind": "report",
-    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"985ad06fe9\" x=\"0\" y=\"0\" width=\"229\" height=\"40\"/>\n  <Element elementId=\"f86a4e0cd6\" x=\"245\" y=\"0\" width=\"229\" height=\"40\"/>\n  <Element elementId=\"ebfc1ad796\" x=\"490\" y=\"0\" width=\"230\" height=\"40\"/>\n  <Element elementId=\"5186c25f6d\" x=\"0\" y=\"56\" width=\"720\" height=\"32\"/>\n  <Element elementId=\"3f0a211ee4\" x=\"0\" y=\"104\" width=\"720\" height=\"240\"/>\n</Page>\n<Page id=\"81f1f8f7de\">\n  <Element elementId=\"29a2dfef17\" x=\"0\" y=\"0\" width=\"720\" height=\"28\"/>\n</Page>\n",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"985ad06fe9\" x=\"0\" y=\"0\" width=\"229\" height=\"40\"/>\n  <Element elementId=\"f86a4e0cd6\" x=\"245\" y=\"0\" width=\"229\" height=\"40\"/>\n  <Element elementId=\"ebfc1ad796\" x=\"490\" y=\"0\" width=\"230\" height=\"40\"/>\n  <Element elementId=\"5186c25f6d\" x=\"0\" y=\"56\" width=\"720\" height=\"39\"/>\n  <Element elementId=\"3f0a211ee4\" x=\"0\" y=\"111\" width=\"720\" height=\"240\"/>\n</Page>\n<Page id=\"81f1f8f7de\">\n  <Element elementId=\"29a2dfef17\" x=\"0\" y=\"0\" width=\"720\" height=\"31\"/>\n</Page>\n",
     "pages": [
       {
         "id": "348e718e5d",
@@ -196,7 +196,7 @@
           "categoricalScheme": "superbloom",
           "colorOverrides": [
             {
-              "color": "#fafafa",
+              "color": "#ffffff",
               "name": "backgroundCanvas"
             }
           ],
