@@ -7,7 +7,7 @@
     },
     "elements": [
       {
-        "body": "# West region sales",
+        "body": "<span style=\"font-size: 28px\">**West region sales**</span>",
         "id": "68a10c95a2",
         "kind": "text",
         "verticalAlign": "center"
@@ -205,7 +205,7 @@
       }
     ],
     "kind": "report",
-    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"2a9ee5d666\">\n  <Element elementId=\"68a10c95a2\" x=\"0\" y=\"0\" width=\"720\" height=\"64\"/>\n  <Element elementId=\"dbd90b1cd7\" x=\"0\" y=\"80\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"108\" width=\"720\" height=\"96\"/>\n  <Element elementId=\"5c8b3b1e2d\" x=\"0\" y=\"220\" width=\"352\" height=\"260\"/>\n  <Element elementId=\"c8dfa8c568\" x=\"0\" y=\"496\" width=\"720\" height=\"300\"/>\n</Page>\n",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"2a9ee5d666\">\n  <Element elementId=\"68a10c95a2\" x=\"0\" y=\"0\" width=\"720\" height=\"50\"/>\n  <Element elementId=\"dbd90b1cd7\" x=\"0\" y=\"66\" width=\"720\" height=\"12\"/>\n  <Element elementId=\"83464a9bf5\" x=\"0\" y=\"94\" width=\"720\" height=\"96\"/>\n  <Element elementId=\"5c8b3b1e2d\" x=\"0\" y=\"206\" width=\"352\" height=\"260\"/>\n  <Element elementId=\"c8dfa8c568\" x=\"0\" y=\"482\" width=\"720\" height=\"330\"/>\n</Page>\n",
     "pages": [
       {
         "id": "2a9ee5d666",
@@ -221,7 +221,7 @@
           "categoricalScheme": "superbloom",
           "colorOverrides": [
             {
-              "color": "#fafafa",
+              "color": "#ffffff",
               "name": "backgroundCanvas"
             }
           ],

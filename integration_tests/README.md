@@ -12,6 +12,8 @@ A real dbt project that uses the package (`packages.yml: local: ../`) against Du
 | `preset_statement` | `simple_statement`: facts, line items, a totals band, a footer note |
 | `sigma_sales_report` | the primitives: A4, header and footer panels, a `row` with a `stack`, pivot, calculated column, a chart built on a table, `extend`, `raw`, a per-report theme, two pages |
 | `sigma_sales_from_data_model` | a source that is a table of a Sigma data model (composed by `sigma_sales_model` with `sigma_data_models`) |
+| `sigma_sales_long_form` | content-sized heights: a wrapping title, text in a narrow cell, `rows=`, `h='fill'` |
+| `sigma_flexible_layout` | the layout tree (rows and stacks nested three deep), `flex` weights shared 2:1, `at()` with overlap, `table_pages` over three pages, and the wider chart family (combo with a secondary axis, treemap, waterfall, funnel, gauge, sankey, box, a region map, progress, embed) |
 | `sigma_orders_from_source` | a dbt source, the `screen` page size, and a project `relation_path` override |
 
 What each step checks is listed in the header of [`scripts/run_integration_tests_duckdb.sh`](../scripts/run_integration_tests_duckdb.sh). In short:

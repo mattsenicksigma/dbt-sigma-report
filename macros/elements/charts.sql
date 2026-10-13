@@ -18,18 +18,20 @@
      style        overrides the default card look (see card_style) #}
 {% macro xy_chart(kind, where, source, x, y, color, name, key, h, description, sort_by, sort_direction, stacking, labels, legend, orientation, style) %}
 {% set source = sigma_report.resolve_source(source, where) %}
-{% set el = sigma_report.new_element(kind, where, key, name, h) %}
+{% set el = sigma_report.new_element(kind, where, key, name, sigma_report.setting('chart_h', h)) %}
 {% set cols = [] %}
-{% set x_id = sigma_report.add_column(cols, el['id'], x, source, where, 'x') %}
+{% set x_id = sigma_report.add_column(cols, el['id'], x, source, where, 'x') if x is not none else none %}
 {% set y_ids = sigma_report.add_columns(cols, el['id'], y, source, where, 'y') %}
 {% do el.update({
   "source": source,
   "columns": cols,
-  "xAxis": {"columnId": x_id},
   "yAxis": {"columnIds": y_ids},
   "_source": source,
 }) %}
-{% if sort_by is not none %}
+{% if x_id is not none %}
+  {% do el.update({"xAxis": {"columnId": x_id}}) %}
+{% endif %}
+{% if sort_by is not none and x_id is not none %}
   {% if sort_by == 'x' %}
     {% set sort_id = x_id %}
   {% elif sort_by == 'y' %}
@@ -63,23 +65,23 @@
 {% endmacro %}
 
 
-{% macro bar_chart(source, x, y, color=none, name=none, key=none, h=260, description=none, sort_by='y', sort_direction='desc', stacking=none, labels=false, legend=true, horizontal=false, style=none) %}
+{% macro bar_chart(source, x, y, color=none, name=none, key=none, h=none, description=none, sort_by='y', sort_direction='desc', stacking=none, labels=false, legend=true, horizontal=false, style=none) %}
 {% do return(sigma_report.xy_chart('bar-chart', 'bar_chart', source, x, y, color, name, key, h, description, sort_by, sort_direction, stacking, labels, legend, 'horizontal' if horizontal else none, style)) %}
 {% endmacro %}
 
 
-{% macro line_chart(source, x, y, color=none, name=none, key=none, h=260, description=none, sort_by=none, sort_direction='asc', labels=false, legend=true, style=none) %}
+{% macro line_chart(source, x, y, color=none, name=none, key=none, h=none, description=none, sort_by=none, sort_direction='asc', labels=false, legend=true, style=none) %}
 {% do return(sigma_report.xy_chart('line-chart', 'line_chart', source, x, y, color, name, key, h, description, sort_by, sort_direction, none, labels, legend, none, style)) %}
 {% endmacro %}
 
 
-{% macro area_chart(source, x, y, color=none, name=none, key=none, h=260, description=none, sort_by=none, sort_direction='asc', stacking=none, labels=false, legend=true, style=none) %}
+{% macro area_chart(source, x, y, color=none, name=none, key=none, h=none, description=none, sort_by=none, sort_direction='asc', stacking=none, labels=false, legend=true, style=none) %}
 {% do return(sigma_report.xy_chart('area-chart', 'area_chart', source, x, y, color, name, key, h, description, sort_by, sort_direction, stacking, labels, legend, none, style)) %}
 {% endmacro %}
 
 
 {# Scatter: `x` and `y` are both measures; `size` optionally scales the marks. #}
-{% macro scatter_chart(source, x, y, color=none, size=none, name=none, key=none, h=260, description=none, legend=true, style=none) %}
+{% macro scatter_chart(source, x, y, color=none, size=none, name=none, key=none, h=none, description=none, legend=true, style=none) %}
 {% set el = sigma_report.xy_chart('scatter-chart', 'scatter_chart', source, x, y, color, name, key, h, description, none, 'asc', none, false, legend, none, style) %}
 {% if size is not none %}
   {% do el.update({"size": {"columnId": sigma_report.add_column(el['columns'], el['id'], size, el['_source'], 'scatter_chart', 'size')}}) %}
@@ -91,7 +93,7 @@
 {# Part-to-whole charts. `category` is the slice field, `value` the measure. #}
 {% macro part_to_whole(kind, where, source, category, value, name, key, h, description, labels, legend, style) %}
 {% set source = sigma_report.resolve_source(source, where) %}
-{% set el = sigma_report.new_element(kind, where, key, name, h) %}
+{% set el = sigma_report.new_element(kind, where, key, name, sigma_report.setting('chart_h', h)) %}
 {% set cols = [] %}
 {% set category_id = sigma_report.add_column(cols, el['id'], category, source, where, 'color') %}
 {% set value_id = sigma_report.add_column(cols, el['id'], value, source, where, 'value') %}
@@ -114,13 +116,13 @@
 {% endmacro %}
 
 
-{% macro pie_chart(source, category, value, name=none, key=none, h=260, description=none, labels=true, legend=true, style=none) %}
+{% macro pie_chart(source, category, value, name=none, key=none, h=none, description=none, labels=true, legend=true, style=none) %}
 {% do return(sigma_report.part_to_whole('pie-chart', 'pie_chart', source, category, value, name, key, h, description, labels, legend, style)) %}
 {% endmacro %}
 
 
 {# Donut: same as pie, plus an optional `hole_value` measure shown in the middle. #}
-{% macro donut_chart(source, category, value, hole_value=none, name=none, key=none, h=260, description=none, labels=true, legend=true, style=none) %}
+{% macro donut_chart(source, category, value, hole_value=none, name=none, key=none, h=none, description=none, labels=true, legend=true, style=none) %}
 {% set el = sigma_report.part_to_whole('donut-chart', 'donut_chart', source, category, value, name, key, h, description, labels, legend, style) %}
 {% if hole_value is not none %}
   {% do el.update({"holeValue": {"columnId": sigma_report.add_column(el['columns'], el['id'], hole_value, el['_source'], 'donut_chart', 'hole')}}) %}

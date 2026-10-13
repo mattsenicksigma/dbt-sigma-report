@@ -30,10 +30,7 @@ assert_kpi_spec_without_value_rejected | sigma_report.kpi_from_spec: a KPI spec 
 assert_empty_row_rejected | sigma_report.row: a row needs at least one element
 assert_row_widths_mismatch_rejected | sigma_report.row: widths has 1 entries but the row has 2 elements
 assert_row_bad_width_rejected | sigma_report.row: widths must be positive numbers
-assert_nested_row_rejected | sigma_report.row: a row holds elements built by sigma_report macros
 assert_empty_stack_rejected | sigma_report.stack: a stack needs at least one element
-assert_stack_of_row_rejected | sigma_report.stack: a stack holds elements built by sigma_report macros
-assert_loose_stack_rejected | a stack(...) belongs inside a row(...)
 assert_unknown_page_size_rejected | sigma_report.report: unknown page_size 'postcard'
 assert_bad_custom_page_size_rejected | sigma_report.report: a custom page_size needs numeric `width` and `height`
 assert_bad_orientation_rejected | sigma_report.report: orientation must be 'portrait' or 'landscape'
@@ -44,6 +41,35 @@ assert_duplicate_page_names_rejected | sigma_report.report: duplicate page name 
 assert_duplicate_element_rejected | resolve to the same element id
 assert_page_overflow_rejected | content overflows the page by
 assert_block_taller_than_page_rejected | a block is 5000px tall
+assert_bad_height_word_rejected | sigma_report.divider: h must be a positive number of pixels, or 'fill'
+assert_zero_table_rows_rejected | sigma_report.table: rows must be a positive number of visible rows
+assert_fill_without_room_rejected | content overflows the page by
+assert_bad_flex_weight_rejected | sigma_report.flex: weight must be a positive number
+assert_flex_non_block_rejected | sigma_report.flex: expected an element, row or stack built by sigma_report macros
+assert_at_in_row_rejected | sigma_report.row: at(...) pins an element to the page, so it cannot be inside a row or stack
+assert_at_in_stack_rejected | sigma_report.stack: at(...) pins an element to the page, so it cannot be inside a row or stack
+assert_at_of_row_rejected | sigma_report.at: pins a single element built by a sigma_report macro
+assert_at_bad_size_rejected | sigma_report.at: width must be a positive number of pixels
+assert_at_outside_page_rejected | outside the 720x960px content area
+assert_break_in_row_rejected | sigma_report.row: page_break() is a page-level event
+assert_break_without_paginate_rejected | page_break() needs paginate=true on the page
+assert_bad_window_rejected | sigma_report.table: window is [first, last] row numbers
+assert_window_without_sort_rejected | sigma_report.table: a window needs a `sort`
+assert_table_pages_without_count_rejected | sigma_report.table_pages: give exactly one of `pages`
+assert_table_pages_both_counts_rejected | sigma_report.table_pages: give exactly one of `pages`
+assert_table_pages_unnamed_rejected | sigma_report.table_pages: set `name=` or `key=`
+assert_raw_unknown_kind_rejected | sigma_report.raw: 'hologram' is not an element kind in Sigma's report schema
+assert_raw_missing_required_rejected | sigma_report.raw: a embed requires 'url'
+assert_raw_unknown_property_rejected | sigma_report.raw: 'urll' is not a property of a embed
+assert_extend_unknown_property_rejected | sigma_report.extend: 'colour' is not a property of a divider
+assert_combo_series_mismatch_rejected | sigma_report.combo_chart: series_types has 1 entries but y has 2 measures
+assert_combo_bad_series_type_rejected | sigma_report.combo_chart: series type must be bar, line, area or scatter
+assert_combo_bad_secondary_rejected | sigma_report.combo_chart: secondary lists 0-based positions in y
+assert_region_map_bad_type_rejected | sigma_report.region_map: region_type must be country
+assert_sankey_one_stage_rejected | sigma_report.sankey_chart: stages is a list of at least two dimensions
+assert_bad_color_by_rejected | sigma_report.treemap_chart: color_by must be 'scale' or 'category'
+assert_progress_bad_mode_rejected | sigma_report.progress: mode must be 'percent' or 'value'
+assert_unknown_setting_rejected | sigma_report.settings: unknown key 'chat_h' in the sigma_report_settings var | {sigma_report_settings: {chat_h: 100}}
 assert_no_room_rejected | leave no room on a
 
 assert_preset_without_kpis_rejected | sigma_report.simple_executive_summary: kpis is required

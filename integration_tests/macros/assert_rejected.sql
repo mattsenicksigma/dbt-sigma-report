@@ -48,12 +48,7 @@
 {% macro assert_empty_row_rejected() %}{% do sigma_report.row([]) %}{% endmacro %}
 {% macro assert_row_widths_mismatch_rejected() %}{% do sigma_report.row([sigma_report.divider(), sigma_report.divider('d2')], widths=[1]) %}{% endmacro %}
 {% macro assert_row_bad_width_rejected() %}{% do sigma_report.row([sigma_report.divider()], widths=[0]) %}{% endmacro %}
-{% macro assert_nested_row_rejected() %}{% do sigma_report.row([sigma_report.row([sigma_report.divider()])]) %}{% endmacro %}
 {% macro assert_empty_stack_rejected() %}{% do sigma_report.stack([]) %}{% endmacro %}
-{% macro assert_stack_of_row_rejected() %}{% do sigma_report.stack([sigma_report.row([sigma_report.divider()])]) %}{% endmacro %}
-{% macro assert_loose_stack_rejected() %}
-{% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.stack([sigma_report.divider('a')])])]) %}
-{% endmacro %}
 {% macro assert_unknown_page_size_rejected() %}{% do sigma_report.page_dimensions('postcard', none) %}{% endmacro %}
 {% macro assert_bad_custom_page_size_rejected() %}{% do sigma_report.page_dimensions({'width': 800}, none) %}{% endmacro %}
 {% macro assert_bad_orientation_rejected() %}{% do sigma_report.page_dimensions('letter', 'diagonal') %}{% endmacro %}
@@ -73,6 +68,51 @@
 {% macro assert_block_taller_than_page_rejected() %}
 {% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a', h=5000)], paginate=true)]) %}
 {% endmacro %}
+{# ---- heights ---- #}
+{% macro assert_bad_height_word_rejected() %}{% do sigma_report.divider('d', h='tall') %}{% endmacro %}
+{% macro assert_zero_table_rows_rejected() %}{% do sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='n', rows=0) %}{% endmacro %}
+{% macro assert_fill_without_room_rejected() %}
+{% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a', h=900), sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='n', h='fill')])]) %}
+{% endmacro %}
+{# ---- flexible layout ---- #}
+{% macro assert_bad_flex_weight_rejected() %}{% do sigma_report.flex(sigma_report.divider('d'), weight=0) %}{% endmacro %}
+{% macro assert_flex_non_block_rejected() %}{% do sigma_report.flex('text') %}{% endmacro %}
+{% macro assert_at_in_row_rejected() %}{% do sigma_report.row([sigma_report.at(sigma_report.divider('d'), 0, 0, 10, 10)]) %}{% endmacro %}
+{% macro assert_at_in_stack_rejected() %}{% do sigma_report.stack([sigma_report.at(sigma_report.divider('d'), 0, 0, 10, 10)]) %}{% endmacro %}
+{% macro assert_at_of_row_rejected() %}{% do sigma_report.at(sigma_report.row([sigma_report.divider('d')]), 0, 0, 10, 10) %}{% endmacro %}
+{% macro assert_at_bad_size_rejected() %}{% do sigma_report.at(sigma_report.divider('d'), 0, 0, 0, 10) %}{% endmacro %}
+{% macro assert_at_outside_page_rejected() %}
+{% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.at(sigma_report.divider('d'), 700, 0, 100, 10)])]) %}
+{% endmacro %}
+{% macro assert_break_in_row_rejected() %}{% do sigma_report.row([sigma_report.page_break()]) %}{% endmacro %}
+{% macro assert_break_without_paginate_rejected() %}
+{% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a'), sigma_report.page_break(), sigma_report.divider('b')])]) %}
+{% endmacro %}
+
+{# ---- table windows ---- #}
+{% macro assert_bad_window_rejected() %}{% do sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='n', sort=['a'], window=[5, 2]) %}{% endmacro %}
+{% macro assert_window_without_sort_rejected() %}{% do sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='n', window=[1, 5]) %}{% endmacro %}
+{% macro assert_table_pages_without_count_rejected() %}{% do sigma_report.table_pages(sigma_report_integration_tests._src(), ['a'], 10, name='n', sort=['a']) %}{% endmacro %}
+{% macro assert_table_pages_both_counts_rejected() %}{% do sigma_report.table_pages(sigma_report_integration_tests._src(), ['a'], 10, pages=2, total_rows=20, name='n', sort=['a']) %}{% endmacro %}
+{% macro assert_table_pages_unnamed_rejected() %}{% do sigma_report.table_pages(sigma_report_integration_tests._src(), ['a'], 10, pages=2, sort=['a']) %}{% endmacro %}
+
+{# ---- raw / extend are checked against Sigma's schema ---- #}
+{% macro assert_raw_unknown_kind_rejected() %}{% do sigma_report.raw('hologram', 'k', {}) %}{% endmacro %}
+{% macro assert_raw_missing_required_rejected() %}{% do sigma_report.raw('embed', 'k', {}) %}{% endmacro %}
+{% macro assert_raw_unknown_property_rejected() %}{% do sigma_report.raw('embed', 'k', {'url': 'https://example.com', 'urll': 'x'}) %}{% endmacro %}
+{% macro assert_extend_unknown_property_rejected() %}{% do sigma_report.extend(sigma_report.divider('d'), {'colour': 'red'}) %}{% endmacro %}
+
+{# ---- typed charts ---- #}
+{% macro assert_combo_series_mismatch_rejected() %}{% do sigma_report.combo_chart(sigma_report_integration_tests._src(), 'a', ['Count()', 'Sum([b])'], series_types=['bar'], name='n') %}{% endmacro %}
+{% macro assert_combo_bad_series_type_rejected() %}{% do sigma_report.combo_chart(sigma_report_integration_tests._src(), 'a', ['Count()'], series_types=['bars'], name='n') %}{% endmacro %}
+{% macro assert_combo_bad_secondary_rejected() %}{% do sigma_report.combo_chart(sigma_report_integration_tests._src(), 'a', ['Count()'], secondary=[3], name='n') %}{% endmacro %}
+{% macro assert_region_map_bad_type_rejected() %}{% do sigma_report.region_map(sigma_report_integration_tests._src(), 'a', 'planet', name='n') %}{% endmacro %}
+{% macro assert_sankey_one_stage_rejected() %}{% do sigma_report.sankey_chart(sigma_report_integration_tests._src(), ['a'], 'Count()', name='n') %}{% endmacro %}
+{% macro assert_bad_color_by_rejected() %}{% do sigma_report.treemap_chart(sigma_report_integration_tests._src(), 'a', 'Count()', color='b', color_by='rainbow', name='n') %}{% endmacro %}
+{% macro assert_progress_bad_mode_rejected() %}{% do sigma_report.progress('1', 'p', mode='half') %}{% endmacro %}
+
+{# ---- settings ---- #}
+{% macro assert_unknown_setting_rejected() %}{% do sigma_report.settings() %}{% endmacro %}
 {% macro assert_no_room_rejected() %}
 {% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a')])], margin=600) %}
 {% endmacro %}

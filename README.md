@@ -87,7 +87,17 @@ Things worth knowing about the model:
 
 ## Layout
 
-A report has **pages**. A page is a vertical stack of **blocks**, and a block is an **element** (full content width) or a **row** (a band of elements sharing the width). Each element has a height in pixels (`h=`, with a default per kind); widths come from the row it sits in.
+A report has **pages**. A page stacks **blocks** top to bottom, and a block is a small tree:
+
+| Block | Is |
+| --- | --- |
+| an element | a chart, table, text, ... (full width of where it sits) |
+| `row([...])` | children side by side, sharing the width (equally, or by `widths=` weights) |
+| `stack([...])` | children one above another |
+| `at(el, x, y, width, height)` | an element pinned at an absolute position, outside the flow |
+| `page_break()` | start a new physical page here |
+
+**Rows and stacks nest to any depth**, so any grid-like arrangement can be written directly: a stack of KPIs beside a row whose second cell is itself a stack of charts is `row([stack([k1, k2, k3]), row([chart, stack([c2, c3])], widths=[3, 2])], widths=[1, 3])`. Width flows down (a row splits its width between children by weight); height is measured up and then shared out (see [Heights](#heights)).
 
 ```sql
 {% set spec = sigma_report.report(
@@ -107,13 +117,35 @@ A report has **pages**. A page is a vertical stack of **blocks**, and a block is
 ) %}
 ```
 
-- `row([a, b, c])` shares the width equally; `widths=[2, 1]` are relative weights. Every element in a row is stretched to the tallest one's height.
-- `stack([a, b])` is a vertical group that fits in one cell of a row (two KPIs beside a chart).
-- `grid(elements, per_row=2)` turns a list of elements into rows.
-- Content that does not fit a page **fails the build** with the overflow in pixels, so a clipped page can never ship silently. Add `paginate=true` to a `page()` and it continues on a new physical page instead (`Detail`, `Detail (2)`, ...), repeating the header and footer.
+- `grid(elements, per_row=2)` turns a list of elements into rows; `section`, `report_header` and `kpi_row` are small composites over the same blocks.
+- Content that does not fit a page **fails the build** with the overflow in pixels, so a clipped page can never ship silently. Add `paginate=true` to a `page()` and it continues on a new physical page instead (`Detail`, `Detail (2)`, ...), repeating the header and footer. `page_break()` forces a new page at a point of your choosing (and needs `paginate=true`).
 - Header and footer heights are subtracted from the content area, so panel content can never overlap page content.
-- A table's row count is unknown at compile time, so you choose the height you reserve for it (`h=`). Size it to what fits the page, or use `paginate=true`.
+- `at(...)` takes no room in the flow; it lands where you say, on the page it is listed on. An element that is *meant* to overlap (a watermark, a logo over a banner) is declared with `overlap=true`, otherwise the geometry check treats overlap as a mistake. A pinned element must lie inside the content area.
 - Pixel positions are validated in CI: nothing outside its page, nothing overlapping (`scripts/check_layout.py`, which you can run on your own manifest too).
+
+### Heights
+
+Every block has a **natural height**: an element's `h=` (default from [project settings](#project-settings)); text sized from its characters and the width it lands in (a long title wraps and the page flows down; the same paragraph in a narrow cell gets taller); a row is its tallest child; a stack is its children plus gaps. Pass `h=` in pixels to pin any of them.
+
+A block can also be **flexible**: it takes a share of whatever height is left over, in proportion to its weight, like CSS `flex-grow`.
+
+```sql
+sigma_report.stack([sigma_report.flex(trend, weight=2), sigma_report.flex(mix), note])
+-- trend and mix share the leftover page height 2:1 on top of their own heights; note keeps its height
+```
+
+- `flex(block, weight=1, min=none)` works on an element, a row or a stack; `h='fill'` on an element is shorthand for `flex` with a 120px minimum. A flexible block on a page takes the rest of that page; in a stack it shares what the stack has left; a row with a flexible child is flexible.
+- A row stretches every child to its own height, so a chart beside a stack is as tall as the stack.
+
+### Tables
+
+A Sigma table element has no pagination or row-limit setting: it is a window onto the first rows of its sort order, as many as its height shows, with the total row count in a summary bar. So the useful question is "how many rows", and the package answers it three ways. (Sigma also has an "Expand table rows" option that grows a table to all its rows at render time; it is a layout attribute rather than an element property, and a separate feature from the windows below.)
+
+- `table(..., rows=10)`: show 10 rows. The height follows (about 130px of title, header and summary bar plus 20px a row; both numbers are [settings](#project-settings)). `sort=` chooses which rows. `h='fill'` gives a table the rest of its page.
+- `table(..., window=[21, 40])`: show rows 21 to 40 of the sort order, using a hidden `RowNumber()` column and a range filter on it.
+- `table_pages(source, columns, rows_per_page=40, total_rows=200, name=..., sort=...)`: a table **over several pages** - one window per page with a page break between (so the page needs `paginate=true`). Each page's title reads "(page i of n)", and each summary bar still shows the true total. The compiler cannot see your data, so you say how many rows to cover (`total_rows=` or `pages=`); rows beyond that are not shown, so leave headroom. About 40 rows fill a Letter page.
+
+`simple_dashboard(..., table_columns=[...], table_sort=[...], table_page_count=3, table_rows=30)` does this for its detail table.
 
 ## Components
 
@@ -122,14 +154,15 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 | Layer | Macros |
 | --- | --- |
 | Report | `report`, `page`, `materialize`, `filter_by_value` |
-| Layout | `row`, `stack`, `grid`, `section`, `report_header` |
-| Elements | `kpi`, `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `table`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image` |
+| Layout | `row`, `stack`, `flex`, `at`, `page_break`, `grid`, `section`, `report_header` |
+| Elements | `kpi`, `table`, `table_pages`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image`, `embed`, `button`, `progress` |
+| Charts | `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `combo_chart`, `waterfall_chart`, `box_chart`, `funnel_chart`, `gauge_chart`, `treemap_chart`, `sankey_chart`, `point_map`, `region_map`, `geography_map` |
 | Composites | `simple_dashboard`, `simple_leaderboard`, `kpi_row`, `kpi_from_spec`, `chart_from_spec`, `facts_line`, `bullet_list` |
 | Report presets | `simple_executive_summary`, `simple_period_review`, `simple_statement` |
 | Sources | `from_ref`, `from_source`, `from_data_model`, `warehouse_table`, `data_model`, `element` |
 | Fields | `field`, `format_currency`, `format_integer`, `format_percent`, `format_compact`, `format_number`, `format_date` |
-| Escape hatches | `extend`, `raw` |
-| Theme | `theme`, `color`, plus the `sigma_report_theme` var |
+| Escape hatches | `extend`, `raw`, `channel_element` (build your own typed kind) |
+| Theme and settings | `theme`, `color`, `setting`; the `sigma_report_theme` and `sigma_report_settings` vars |
 
 ### Dashboards in one call
 
@@ -147,7 +180,24 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 
 Both take `report_args={...}`: any argument of `report()` (`page_size`, `orientation`, `margin`, `header`, `footer`, `theme`, `description`, `folder_id`, `report_id`).
 
-KPI mappings take `value`, `name`, `format`, `compare_to` (compare against a target measure), `timeline` + `period` (compare the latest period with the one before), `trend` (sparkline), `direction` (`higher` / `lower` / `none`), `description`. Chart mappings take a `type` of `bar`, `line`, `area`, `scatter`, `pie` or `donut` plus that chart macro's arguments (`x`, `y`, `color`, `sort_by`, `stacking`, `labels`, ...).
+KPI mappings take `value`, `name`, `format`, `compare_to` (compare against a target measure), `timeline` + `period` (compare the latest period with the one before), `trend` (sparkline), `direction` (`higher` / `lower` / `none`), `description`. Chart mappings take a `type` (`bar`, `line`, `area`, `scatter`, `pie`, `donut`, `combo`, `waterfall`, `box`, `funnel`, `gauge`, `treemap` or `sankey`) plus that chart macro's arguments (`x`, `y`, `color`, `sort_by`, `stacking`, `labels`, ...).
+
+### The chart family
+
+The typed chart macros take fields (a bare column name or a formula) and build the columns and channels for you, so none of them needs hand-written Sigma JSON:
+
+```sql
+sigma_report.combo_chart(trips, 'DateTrunc("month", [Start Date])', ['Count()', 'Avg([Duration]) / 60'],
+                         series_types=['bar', 'line'], secondary=[1], name='Trips and average length')   -- second measure on a 2nd axis
+sigma_report.funnel_chart(orders, stage='segment', value='Sum([Amount])')
+sigma_report.gauge_chart(orders, 'Sum([Amount])', minimum='0', maximum='Sum([Target Amount])')           -- number literals are fine
+sigma_report.treemap_chart(orders, 'region', 'Sum([Amount])', color='Sum([Target Amount])')              -- color_by='scale' | 'category'
+sigma_report.sankey_chart(orders, ['segment', 'region'], 'Sum([Amount])')
+sigma_report.region_map(orders, 'state', 'us-state', color='Sum([Amount])')
+sigma_report.waterfall_chart(...)   sigma_report.box_chart(...)   sigma_report.point_map(...)   sigma_report.geography_map(...)
+```
+
+A new kind that has no macro is a few lines with `channel_element` (see [`docs/design.md`](docs/design.md)); anything finer-grained is `extend`.
 
 ### Report presets
 
@@ -190,12 +240,12 @@ It adds a hidden column and a `list` filter on it to every element built on a wa
 
 ### Escape hatches
 
-Sigma's schema has hundreds of options beyond what the macros model.
+Sigma's schema has hundreds of options beyond what the macros model, and reaching for one should not mean writing unchecked JSON.
 
 - `extend(element, {...})` deep-merges raw Sigma properties onto an element you built with a normal macro.
-- `raw(kind, key, {...}, h=...)` makes an element of any kind the package has no macro for yet (`gauge-chart`, `combo-chart`, `embed`, `report-repeated-container`, ...). It still takes part in layout, id checks and validation.
+- `raw(kind, key, {...}, h=...)` makes an element of any kind in Sigma's report schema that the package has no macro for (`report-repeated-container`, `input-table`, `plugin`, ...). It still takes part in layout and id checks.
 
-Raw properties are not checked by the macros; `scripts/validate_against_sigma_schema.py` checks every compiled report against Sigma's published schema.
+Both are **validated at `dbt parse`** against a registry generated from Sigma's own schema ([`macros/elements/kinds.sql`](macros/elements/kinds.sql), rebuilt by `scripts/generate_kinds.py`; CI fails if it is stale): an unknown kind, a missing required property (`raw`) or a misspelt property name fails with the list of what Sigma allows. Property *values* are checked by `scripts/validate_against_sigma_schema.py` against Sigma's published schema, and `--push --dry-run` against your organization.
 
 ## Sources
 
@@ -241,6 +291,7 @@ vars:
     fonts: {text: Inter, data: Inter}
     border_radius: round               # square | round | pill
     cards: true                        # false = no card border around data elements
+    page_background: surface           # a token or hex; white by default (reports are printed)
 ```
 
 | Key | Choices |
@@ -253,6 +304,33 @@ vars:
 Tokens: `canvas`, `ink`, `body`, `muted`, `hairline`, `fill`, `series_grey` (from the base); `primary`, `tint`, `edge`, `series`, `series_mid` (from the hue); `surface`, `success`, `danger`, `warning` and their `_fill` variants. The scales are Sigma's own design-system scales.
 
 Precedence, lowest to highest: package defaults, the `sigma_report_theme` var, then `theme={...}` on a single `report()`. Each level is deep-merged, so overriding one thing keeps the rest. A per-report theme recolors elements that were built before `report()` ran (colors are late-bound), and an unknown hue, base or token fails at `dbt parse` rather than silently falling back.
+
+## Project settings
+
+Every size and calibration constant the package would otherwise hard-code is a setting, so a team sets its house style once and every report follows. Override any key in `dbt_project.yml` (keys you leave out keep the defaults; an unknown key fails at `dbt parse`, so a typo cannot silently do nothing):
+
+```yaml
+vars:
+  sigma_report_settings:
+    page_size: a4
+    margin: 40
+    gap: 12
+    chart_h: 300          # default chart height
+    kpi_h: 80
+    title_size: 32        # px
+    table_row_h: 24       # recalibrate if your theme or font draws taller rows
+    char_width: 0.6       # em per character, for estimating text height
+```
+
+| Group | Keys (defaults) |
+| --- | --- |
+| Page | `page_size` (letter), `margin` (48), `gap` (16), `header_height` (48), `footer_height` (32) |
+| Element heights | `kpi_h` (96), `chart_h` (260), `pivot_h` (300), `map_h` (320), `gauge_h` (180), `divider_h` (12), `image_h` (64) |
+| Tables | `table_rows` (10), `table_row_h` (20), `table_chrome` (130), `table_chrome_untitled` (92) |
+| Type | `title_size` (28), `heading_size` (20), `body_size` (14), `h1_size` / `h2_size` / `h3_size` (36 / 28 / 22) |
+| Text estimate | `char_width` (0.55 em per character), `line_height` (1.35), `text_padding` (6) |
+
+A per-call argument (`h=`, `margin=`, `page_size=`, ...) always wins over the project setting, which wins over the package default. The table and text numbers are *measurements* of Sigma's rendering, not documented by Sigma, so they are the settings to recalibrate if your theme or font differs: push a report, export it to PDF (`POST /v2/reports/{id}/export`) and compare.
 
 ## Publishing to Sigma
 
@@ -289,14 +367,15 @@ bash scripts/run_integration_tests_duckdb.sh   # the whole suite; DuckDB, no cre
 python -m unittest discover -s scripts -p "test_*.py"
 ```
 
-The integration suite is a real dbt project ([`integration_tests/`](integration_tests)) that compiles six reports from a seed, then:
+The integration suite is a real dbt project ([`integration_tests/`](integration_tests)) that compiles eight reports from a seed, then:
 
 1. asserts the shape of every compiled report (field names, cross-references, theme flow, ids from vars);
 2. checks pixel geometry from the layout XML (inside the page, nothing overlapping);
 3. compares each report with a committed golden JSON file (output is deterministic: every id is a hash of a stable path);
 4. validates each against Sigma's request schema, extracted from the public OpenAPI document;
-5. runs 36 inputs that must fail `dbt parse`, each with the exact error it must raise;
-6. re-runs the assertions with different Sigma ids to prove every id flows from the vars.
+5. runs 62 inputs that must fail `dbt parse`, each with the exact error it must raise;
+6. re-runs the assertions with different Sigma ids to prove every id flows from the vars, and with different project settings to prove every size flows from those;
+7. checks that the element-kind registry (`kinds.sql`) matches Sigma's schema.
 
 CI (`.github/workflows/integration-tests.yml`) runs all of it on dbt 1.x and dbt 2.x.
 
@@ -304,11 +383,12 @@ CI (`.github/workflows/integration-tests.yml`) runs all of it on dbt 1.x and dbt
 
 An initial version aimed at dashboards.
 
-- **Validated against Sigma's schema, not rendered in CI.** The request schema check, the geometry check and the golden files run in CI. CI has no Sigma credentials, so how a report *looks* in Sigma, and whether Sigma accepts the formulas against your data, is checked by `--push --dry-run` against your own organization. Panel sizing in particular is an assumption: header and footer heights are subtracted from the content area, which is safe (no overlap) but may leave more white space than Sigma needs.
-- **Modeled elements**: KPI, bar / line / area / scatter / pie / donut charts, table, pivot table, text, divider, image. Not modeled (use [`raw`](#escape-hatches)): combo, waterfall, funnel, gauge, sankey, treemap and box charts, maps, input tables, buttons, embeds, repeated containers, conditional formatting, reference marks, trellis.
+- **Validated against Sigma's schema, not rendered in CI.** The request schema check, the geometry check and the golden files run in CI. CI has no Sigma credentials, so how a report *looks* in Sigma, and whether Sigma accepts the formulas against your data, is checked by `--push --dry-run` against your own organization. To *see* a report, push it and export it: `POST /v2/reports/{id}/export` returns a PDF. Panel sizing is an assumption: header and footer heights are subtracted from the content area, which is safe (no overlap) but may leave more white space than Sigma needs.
+- **Modeled elements**: KPI; bar, line, area, scatter, pie, donut, combo, waterfall, box, funnel, gauge, treemap and sankey charts; point, region and geography maps; table (with row windows and multi-page `table_pages`), pivot table; text, title, heading, divider, image, embed, button, progress. Not modeled (use [`raw`](#escape-hatches), which is validated against Sigma's schema): input tables, plugins, repeated containers, conditional formatting, reference marks, trellis. Verified by rendering a pushed report in Sigma: combo (with a secondary axis), treemap, funnel, waterfall, gauge, box, nested layouts, flexible heights, `at()` and a 90-row table over three pages. Sankey, the three maps, progress, button and embed are checked against Sigma's request schema in CI (and the compiled output of the others also passed Sigma's dry run), but not yet rendered.
 - **No controls.** Reports have no interactive controls in Sigma's code representation.
-- **Layout is a vertical flow** of rows and stacks. There is no free x/y placement and no nesting of rows inside stacks beyond one level; `raw` elements still sit in the same flow.
-- **Heights are yours to choose.** Table and text height depend on data and content that the compiler cannot see.
+- **Layout is a tree of rows and stacks, plus pinned elements.** There is no free-form drag layout; `at()` pins single elements, and anything else is a row or a stack. Overlap is only allowed for pinned elements declared `overlap=true`.
+- **Text height is an estimate.** It is computed from character counts and font size (generously, so text is not clipped); unusual fonts, very long unbroken words or `{{formula}}` segments can differ. Pin `h=` or tune `char_width` / `line_height` when it matters. The table row height (20px) and chrome (130px) were measured from a Sigma PDF export, not documented by Sigma, so they could shift - they are [settings](#project-settings).
+- **Multi-page tables need you to say how many pages.** `table_pages` slices the sort order into row windows (`RowNumber()` + a filter); the compiler cannot see your data, so rows beyond `total_rows` are not shown (each window's summary bar still shows the true total, so a shortfall is visible). A windowed table needs a deterministic `sort`.
 - **Source paths** use `target.database` / `target.schema` unless overridden (see [Sources](#sources)).
 - **Formulas are strings.** The package cannot check them against your data; the dry run does.
 - One `sigma_report` per model; other `meta` keys are lost to `materialize()`.
