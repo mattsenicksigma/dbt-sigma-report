@@ -1472,6 +1472,12 @@ macros:
       - name: show_title
         type: bool
         description: "Include the title, subtitle and rule at the top. Pass false to start straight at the KPIs or charts."
+      - name: date_column
+        type: string
+        description: "The source's date field, needed by any `last_days` key in `kpis`, `charts` or `table_pivot`."
+      - name: table_pivot
+        type: dict[string,any]
+        description: "A pivot in place of the detail table: a mapping of `values` (required), `rows` and/or `cols`, and optionally `name`, `key`, `h`, `last_days`. Not together with `table_columns`."
       - name: report_args
         type: dict[string,any]
         description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers, schedules."
@@ -1757,6 +1763,18 @@ macros:
       - name: mode
         type: string
         description: "`include` (default) keeps only `values`; `exclude` drops them."
+  - name: filter_last_days
+    description: "Limits one chart, KPI or table to the last N days of a date column, relative to the day the report renders: adds a hidden 0/1 column using `Today()` and a `number-range` filter on it. The element is updated in place and returned."
+    arguments:
+      - name: element
+        type: dict[string,any]
+        description: "A chart, KPI or table built on a warehouse table."
+      - name: column
+        type: string
+        description: "The date column. A bare lowercase name is title-cased the way Sigma shows it."
+      - name: days
+        type: int
+        description: "How many days back, counted from today. A whole number of at least 1."
   # ------------------------------------------------------------ actions
   - name: button
     description: "A button. Give it `actions=` to make it do something; see `action` and the effect macros."

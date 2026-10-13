@@ -6,6 +6,7 @@ A real dbt project that uses the package (`packages.yml: local: ../`) against Du
 | --- | --- |
 | `sigma_sales_simple` | the smallest `simple_dashboard`: one KPI, one chart |
 | `sigma_sales_untitled` | `simple_dashboard(show_title=false)`: no title, subtitle or rule |
+| `sigma_last_days_dashboard` | `last_days` + `date_column` on a KPI, a chart and a `table_pivot`, alongside an unwindowed KPI and chart, with `filter_by_value` on top |
 | `sigma_sales_dashboard` | a full `simple_dashboard`: three KPIs (one against a target), four chart kinds, a sorted, paginated (`table_paginate`) detail table; continues onto a second page |
 | `simple_leaderboard` | ranked horizontal bars per dimension |
 | `preset_executive_summary` | `simple_executive_summary`: three KPIs (one against plan), a headline chart, highlights |

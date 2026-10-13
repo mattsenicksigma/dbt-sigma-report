@@ -101,3 +101,9 @@ assert_schedule_without_recipients_rejected | sigma_report.schedule: to must be 
 assert_bad_recipient_rejected | sigma_report.schedule: a recipient is an email address or a Sigma target mapping
 assert_two_schedule_conditions_rejected | sigma_report.schedule: pass at most one of only_if_not_empty= / only_if_empty=
 assert_duplicate_schedule_names_rejected | sigma_report.report: two schedules are named 's'
+assert_last_days_without_date_column_rejected | sigma_report.simple_dashboard: `last_days` on 'Orders' needs `date_column=`
+assert_last_days_zero_rejected | sigma_report.filter_last_days: days must be a whole number of at least 1, got 0
+assert_last_days_fractional_rejected | sigma_report.filter_last_days: days must be a whole number of at least 1, got 7.5
+assert_last_days_twice_rejected | sigma_report.filter_last_days: element
+assert_last_days_non_warehouse_rejected | sigma_report.filter_last_days: expected a chart, KPI or table element
+assert_table_and_pivot_rejected | sigma_report.simple_dashboard: give `table_columns` or `table_pivot`, not both.

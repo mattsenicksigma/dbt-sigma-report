@@ -53,3 +53,54 @@
 {% endif %}
 {% do return(spec) %}
 {% endmacro %}
+
+
+{# Restricts one element to rows from the last `days` days of a date column, relative to the day the
+   report renders. Reports have no controls, so a "last 7 days" chart cannot be a filter someone sets:
+   it is part of the element.
+
+     sigma_report.filter_last_days(sigma_report.bar_chart(...), 'activity_date', 7)
+
+   The element gets a hidden 0/1 column (`If([Activity Date] >= DateAdd("day", -7, Today()), 1, 0)`, so
+   `Today()` is evaluated by Sigma at render time and the report never goes stale) and a `number-range`
+   filter keeping 1. The window is the `days` calendar days up to now: `last_days=1` is today and
+   yesterday's boundary, so a source that lags a day shows yesterday. `column` is titled the way
+   `filter_by_value`'s is. The element must be built on a warehouse table (an element built on another
+   element inherits that element's filter instead), and the call fails rather than leave an element
+   silently unscoped. The element is updated in place and returned. #}
+{% macro filter_last_days(element, column, days) %}
+{% if element is not mapping or element.get('source') is not mapping %}
+  {% do sigma_report.fail('filter_last_days', "expected a chart, KPI or table element, got " ~ element) %}
+{% endif %}
+{% if column is not string or not column %}
+  {% do sigma_report.fail('filter_last_days', "column must be a non-empty string, got " ~ column) %}
+{% endif %}
+{% if days is not number or days is sameas true or days is sameas false or days < 1 or days != days | int %}
+  {% do sigma_report.fail('filter_last_days', "days must be a whole number of at least 1, got " ~ days) %}
+{% endif %}
+{% set source = element['source'] %}
+{% if source.get('kind') != 'warehouse-table' %}
+  {% do sigma_report.fail('filter_last_days', "element '" ~ element['id'] ~ "' is not built on a warehouse table, so there is no date column to filter. An element built on another element inherits that element's filter.") %}
+{% endif %}
+{% set column_id = sigma_report.freeze_id(element['id'] ~ ':last-days:' ~ column) %}
+{% set filters = element.get('filters') or [] %}
+{% for existing in filters if existing['columnId'] == column_id %}
+  {% do sigma_report.fail('filter_last_days', "element '" ~ element['id'] ~ "' is already limited to the last days of '" ~ column ~ "'") %}
+{% endfor %}
+{% set ref = '[' ~ source['path'][-1] ~ '/' ~ sigma_report.titleize(column) ~ ']' %}
+{% if 'columns' not in element %}{% do element.update({'columns': []}) %}{% endif %}
+{% do element['columns'].append({
+  "id": column_id,
+  "formula": 'If(' ~ ref ~ ' >= DateAdd("day", -' ~ (days | int) ~ ', Today()), 1, 0)',
+  "hidden": true,
+}) %}
+{% do filters.append({
+  "id": sigma_report.freeze_id(element['id'] ~ ':last-days-filter:' ~ column),
+  "columnId": column_id,
+  "kind": "number-range",
+  "min": 1,
+  "max": 1,
+}) %}
+{% do element.update({"filters": filters}) %}
+{% do return(element) %}
+{% endmacro %}
