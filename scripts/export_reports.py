@@ -57,9 +57,10 @@ def load_reports(manifest_path, select=None):
 
 
 def request_body(spec):
-    """The `POST /v2/reports` body: the spec without the package's own `reportId` and `schedules`, which Sigma
-    keeps outside a report's contents (schedules are applied separately, see `apply_schedules`)."""
-    return {k: v for k, v in spec.items() if k not in ("reportId", "schedules")}
+    """The `POST /v2/reports` body: the spec without the package's own bookkeeping - `reportId`; `schedules`,
+    which Sigma keeps outside a report's contents (applied separately, see `apply_schedules`); and any
+    `_`-prefixed key such as `_overlap_ok`, which only the geometry check reads."""
+    return {k: v for k, v in spec.items() if k not in ("reportId", "schedules") and not k.startswith("_")}
 
 
 def check_spec(name, spec, for_push=False):

@@ -81,7 +81,7 @@ macros:
 
   # ------------------------------------------------------------ layout
   - name: row
-    description: "A horizontal band of elements sharing the page content width equally, or by relative `widths`. Every element is stretched to the tallest one's height."
+    description: "A horizontal band of blocks (elements, rows, stacks) sharing the width equally or by relative `widths`. Every child is stretched to the height of the row."
     arguments:
       - name: elements
         type: list[any]
@@ -90,20 +90,55 @@ macros:
         type: list[any]
         description: "Relative weights, one per element. Default: equal."
       - name: gap
-        type: int
+        type: any
         description: "Space between the elements in pixels. Defaults to the report's gap."
       - name: pad
         type: int
         description: "Trailing empty weight, so a short row keeps the cell width of the rows above it."
   - name: stack
-    description: "A vertical group of elements that fits in one cell of a row (two KPIs beside a chart). Elements keep their own heights."
+    description: "A vertical group of blocks (elements, rows, stacks). Children keep their natural heights; flexible ones share any extra."
     arguments:
       - name: elements
         type: list[any]
         description: "Elements and/or lists of elements (not rows or stacks)."
       - name: gap
-        type: int
+        type: any
         description: "Space between the stacked elements in pixels."
+  - name: flex
+    description: "Makes a block flexible: it takes a share of the leftover height, in proportion to `weight`, and is never smaller than `min`."
+    arguments:
+      - name: block
+        type: any
+        description: "An element, row or stack built by a sigma_report macro."
+      - name: weight
+        type: any
+        description: "Relative share of the leftover space (default 1)."
+      - name: min
+        type: any
+        description: "The smallest the block may be, in pixels (default: its natural height)."
+  - name: at
+    description: "Pins an element at an absolute position on its page, outside the flow. With `overlap=true` it may overlap flowed content."
+    arguments:
+      - name: element
+        type: any
+        description: "An element built by a sigma_report macro."
+      - name: x
+        type: any
+        description: "The category or time axis, as a field."
+      - name: y
+        type: any
+        description: "The measure, or a list of measures."
+      - name: width
+        type: any
+        description: "Width in pixels."
+      - name: height
+        type: any
+        description: "Height in pixels."
+      - name: overlap
+        type: bool
+        description: "True if this element is meant to overlap other content, so the geometry check allows it."
+  - name: page_break
+    description: "Starts a new physical page here. Needs `paginate=true` on the page; does nothing on an empty page."
   - name: page_dimensions
     description: "The page size in pixels (96 per inch) for a preset name or a {width, height} mapping, with an optional orientation."
     arguments:
@@ -392,8 +427,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: format
         type: any
         description: "A `sigma_report.format_*()` result applied to the value."
@@ -443,8 +478,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -491,8 +526,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -533,8 +568,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -581,8 +616,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -611,8 +646,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -647,8 +682,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -662,7 +697,7 @@ macros:
         type: any
         description: "Overrides the default card look (a Sigma `style` mapping)."
   - name: table
-    description: "A table element. `h` is the height reserved for it on the page, since row counts are unknown at compile time."
+    description: "A table element. Sigma tables do not paginate: they show the first `rows` rows of the sort order, so `rows` (or `h`) sets the height."
     arguments:
       - name: source
         type: any
@@ -676,18 +711,33 @@ macros:
       - name: key
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
-      - name: h
+      - name: rows
         type: int
-        description: "Height in pixels."
+        description: "Data rows shown (default 10). Sigma tables do not paginate: they show as many rows as their height allows, so this sets the height."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page. Overrides `rows`."
       - name: sort
         type: list[any]
         description: "Sort items: a field, or a (field, 'asc'|'desc') pair."
+      - name: window
+        type: list[any]
+        description: "[first, last] row numbers (1-based, inclusive) to show: a hidden RowNumber() column with a range filter."
       - name: description
         type: string
         description: "Description text."
       - name: style
         type: any
         description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: table_height
+    description: "The height of a table showing a given number of rows, measured from Sigma's PDF export."
+    arguments:
+      - name: rows
+        type: int
+        description: "Visible data rows."
+      - name: titled
+        type: bool
+        description: "Whether the table has a title bar."
   - name: pivot_table
     description: "A pivot table: `rows` and `cols` are the grouping levels, `values` the measures."
     arguments:
@@ -710,8 +760,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -728,8 +778,8 @@ macros:
         type: string
         description: "Identity for the id; defaults to the body."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, `fill`, or none to size from the content and the width."
       - name: align
         type: string
         description: "Vertical alignment: `top`, `center` or `bottom`."
@@ -746,8 +796,8 @@ macros:
         type: string
         description: "Identity for the id; defaults to the text."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or none to size from the content and the width."
   - name: heading
     description: "A section heading."
     arguments:
@@ -758,8 +808,8 @@ macros:
         type: string
         description: "Identity for the id; defaults to the text."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or none to size from the content and the width."
   - name: divider
     description: "A rule between sections. Give repeated dividers distinct keys."
     arguments:
@@ -770,14 +820,14 @@ macros:
         type: string
         description: "`horizontal` or `vertical`."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
   - name: image
     description: "An image from a URL, such as a logo."
     arguments:
       - name: url
         type: string
-        description: "Image URL."
+        description: "URL."
       - name: key
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
@@ -785,22 +835,448 @@ macros:
         type: string
         description: "Alternative text."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: fit
         type: string
         description: "`contain`, `cover`, `scale-down` or `stretch`."
+  - name: combo_chart
+    description: "A combo chart: bars, lines, areas or points on one axis, with a type per measure (`series_types`)."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: x
+        type: any
+        description: "The category or time axis, as a field."
+      - name: y
+        type: any
+        description: "The measure, or a list of measures."
+      - name: series_types
+        type: list[any]
+        description: "How each measure is drawn: `bar`, `line`, `area` or `scatter`. Default: all bars."
+      - name: secondary
+        type: list[any]
+        description: "0-based positions in `y` of the measures to plot against a secondary axis."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: labels
+        type: bool
+        description: "Show data labels."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: waterfall_chart
+    description: "A waterfall chart: `x` is the step, `y` the measure that rises and falls."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: x
+        type: any
+        description: "The category or time axis, as a field."
+      - name: y
+        type: any
+        description: "The measure, or a list of measures."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: box_chart
+    description: "A box plot of `y`, optionally grouped by `x`."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: y
+        type: any
+        description: "The measure, or a list of measures."
+      - name: x
+        type: any
+        description: "The category or time axis, as a field."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: legend
+        type: bool
+        description: "`false` hides the legend."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: funnel_chart
+    description: "A funnel: `stage` is the step, `value` the measure at each step."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: stage
+        type: any
+        description: "The dimension for each step."
+      - name: value
+        type: any
+        description: "The measure, as a field."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: gauge_chart
+    description: "A gauge of `value`, optionally against `minimum`, `maximum` and `target`."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: value
+        type: any
+        description: "The measure, as a field."
+      - name: minimum
+        type: any
+        description: "A field or formula for the lower bound."
+      - name: maximum
+        type: any
+        description: "A field or formula for the upper bound."
+      - name: target
+        type: any
+        description: "A field or formula for the target mark."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: treemap_chart
+    description: "A treemap: tiles sized by `value`, grouped by `category`, optionally nested by `split_by` and colored by a field."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: category
+        type: any
+        description: "The slice field."
+      - name: value
+        type: any
+        description: "The measure, as a field."
+      - name: split_by
+        type: any
+        description: "A field that nests categories into groups."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: color_by
+        type: string
+        description: "`scale` (a gradient over a measure) or `category`."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: sankey_chart
+    description: "A sankey diagram: `stages` is the ordered list of dimensions the flow passes through, `value` sizes each flow."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: stages
+        type: list[any]
+        description: "The ordered list of dimensions the flow passes through (at least two)."
+      - name: value
+        type: any
+        description: "The measure, as a field."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: point_map
+    description: "A map of points from `latitude` and `longitude`, optionally sized and colored."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: latitude
+        type: any
+        description: "A latitude field."
+      - name: longitude
+        type: any
+        description: "A longitude field."
+      - name: size
+        type: any
+        description: "A field that scales scatter marks."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: color_by
+        type: string
+        description: "`scale` (a gradient over a measure) or `category`."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: region_map
+    description: "A filled map of regions (`region_type`: country, us-state, us-county, us-zipcode, us-cbsa), shaded by `color`."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: region
+        type: any
+        description: "A field of region names or codes."
+      - name: region_type
+        type: string
+        description: "What the region field holds: country, us-state, us-county, us-zipcode or us-cbsa."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: color_by
+        type: string
+        description: "`scale` (a gradient over a measure) or `category`."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: geography_map
+    description: "A map of geographic shapes from a geography-typed field."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: geography
+        type: any
+        description: "A geography-typed field."
+      - name: color
+        type: any
+        description: "Field to split series by; omitted means every mark takes the theme's `series` color."
+      - name: color_by
+        type: string
+        description: "`scale` (a gradient over a measure) or `category`."
+      - name: name
+        type: string
+        description: "Name shown on the element (and, with `key`, the source of its stable id)."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: progress
+    description: "A progress bar or ring: a value against a range, no source needed."
+    arguments:
+      - name: value
+        type: any
+        description: "A Sigma formula for the current value, e.g. `72` or `Sum([Sales])`."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: min
+        type: any
+        description: "A Sigma formula for the lower bound of the range (value mode)."
+      - name: max
+        type: any
+        description: "A Sigma formula for the upper bound of the range."
+      - name: mode
+        type: string
+        description: "`percent` (value relative to min and max) or `value`."
+      - name: shape
+        type: string
+        description: "`bar` or `ring`."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+  - name: embed
+    description: "An embedded page by URL."
+    arguments:
+      - name: url
+        type: string
+        description: "URL."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
+  - name: channel_element
+    description: "Assembles an element whose data channels are described by a list of mappings (prop, fields, shape, role). For writing your own element macros."
+    arguments:
+      - name: kind
+        type: string
+        description: "'ref' or 'source' for `relation_path`; an element kind (`bar-chart`, `text`, ...) elsewhere."
+      - name: where
+        type: string
+        description: "Name of the calling macro, for error messages."
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: name
+        type: string
+        description: "Element title."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: h
+        type: any
+        description: "Height in pixels or `fill`."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: channels
+        type: list[any]
+        description: "List of mappings: prop (Sigma property), fields (field or list; none skips it), shape (id, ids or list), optional role."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
+      - name: extra
+        type: dict[string,any]
+        description: "Properties merged onto the element as is."
+  - name: table_pages
+    description: "A table that runs over several pages: one `table(window=...)` per page with a page break between. Sigma does not paginate tables itself."
+    arguments:
+      - name: source
+        type: any
+        description: "Where the rows come from: a `from_ref` / `from_source` / `from_data_model` / `warehouse_table` source, or another element."
+      - name: columns
+        type: any
+        description: "Fields shown, in order (a table); or an element's column list (`add_column`)."
+      - name: rows_per_page
+        type: int
+        description: "Rows shown on each page."
+      - name: pages
+        type: int
+        description: "How many windows (pages). Give this or `total_rows`."
+      - name: total_rows
+        type: int
+        description: "How many rows to cover; sets the number of pages. Give this or `pages`, not both."
+      - name: name
+        type: string
+        description: "Table title; each window gets `(page i of n)`."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
+      - name: sort
+        type: list[any]
+        description: "The sort order the windows slice; required, so row numbers are deterministic."
+      - name: description
+        type: string
+        description: "Description text."
+      - name: style
+        type: any
+        description: "Overrides the default card look (a Sigma `style` mapping)."
   - name: extend
-    description: "Deep-merges raw Sigma properties onto an element built with a normal macro. The element is updated in place and returned."
+    description: "Deep-merges raw Sigma properties onto an element built with a normal macro, checking each key against the properties Sigma allows for its kind."
     arguments:
       - name: el
         type: any
         description: "An element built by a sigma_report macro."
       - name: options
         type: dict[string,any]
-        description: "Raw Sigma properties to merge on."
+        description: "Raw Sigma properties, checked against the schema for the kind."
   - name: raw
-    description: "An element of any Sigma kind this package has no macro for (gauge, combo chart, embed, repeated container, ...), with Sigma's own properties used as written."
+    description: "An element of any kind Sigma's report schema defines, with its properties used as written. The kind, required properties and property names are validated against the schema at parse time."
     arguments:
       - name: kind
         type: string
@@ -810,178 +1286,34 @@ macros:
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: properties
         type: dict[string,any]
-        description: "Sigma's own fields, used as written."
+        description: "Sigma's own fields, validated against the kind's schema."
       - name: h
-        type: int
-        description: "Height in pixels."
-  # ------------------------------------------------------------ actions
-  - name: button
-    description: "A button. Give it `actions=` to make it do something; see `action` and the effect macros."
-    arguments:
-      - name: text
-        type: string
-        description: "The button label."
-      - name: actions
-        type: list[any]
-        description: "`action(...)` results to attach."
-      - name: key
-        type: string
-        description: "Identity the element's id is derived from; defaults to the name."
-      - name: h
-        type: int
-        description: "Height in pixels."
-      - name: appearance
-        type: string
-        description: "`filled`, `outline` or `text`."
-      - name: align
-        type: string
-        description: "`left`, `center`, `right` or `stretch`."
-      - name: size
-        type: string
-        description: "`small`, `medium` or `large`."
-      - name: radius
-        type: string
-        description: "Corner style: `square`, `round` or `pill`."
-  - name: action_triggers
-    description: "The triggers Sigma accepts as a bare string (on-click, on-select, on-change, ...)."
-  - name: action
-    description: "One action sequence: a trigger and the effects that run, in order, when it fires. Attach it with `button(actions=)` or `with_actions`."
-    arguments:
-      - name: trigger
         type: any
-        description: "A trigger string (see `action_triggers`), or a mapping with an `on` key (an `on-select` scoped to a column, or with a `condition`) used as written."
-      - name: effects
-        type: list[any]
-        description: "Effects built by the effect macros, or by `effect()`."
-      - name: key
-        type: string
-        description: "Keeps the action's id stable if you reorder a list of them; defaults to its position."
-  - name: with_actions
-    description: "Attaches actions to any element (a macro's result or `raw()`). Updates the element in place and returns it; calling it again appends. Ids come from the element id, the trigger and the action's key or position."
+        description: "Height in pixels, `fill`, or none for the project's `chart_h`."
+  - name: kind_info
+    description: "What Sigma's schema says about an element kind: its required and allowed properties. Raises on an unknown kind."
     arguments:
-      - name: el
-        type: dict[string,any]
-        description: "An element built by a sigma_report macro."
-      - name: actions
-        type: list[any]
-        description: "`action(...)` results."
-  - name: effect
-    description: "An effect of any kind, with Sigma's own fields (call-api, insert-rows, update-rows, send-embed-event, if-else, ...)."
-    arguments:
-      - name: name
+      - name: kind
         type: string
-        description: "Sigma's effect name, e.g. `call-api`."
+        description: "A Sigma element kind."
+      - name: where
+        type: string
+        description: "Macro name for the error message."
+  - name: check_properties
+    description: "Raises on a property Sigma does not define for a kind and, with `require`, on a missing required one."
+    arguments:
+      - name: kind
+        type: string
+        description: "A Sigma element kind."
       - name: properties
         type: dict[string,any]
-        description: "Sigma's own fields for that effect, used as written."
-  - name: set_control_value
-    description: "Effect: set a control to a value."
-    arguments:
-      - name: control
-        type: any
-        description: "The control's id (or an element carrying one)."
-      - name: value
-        type: any
-        description: "A string, number, boolean or list of strings (typed for you), or a Sigma value mapping used as written."
-  - name: clear_control
-    description: "Effect: clear one control."
-    arguments:
-      - name: control
-        type: any
-        description: "The control's id."
-  - name: clear_controls
-    description: "Effect: clear many controls at once."
-    arguments:
-      - name: scope
+        description: "The properties to check."
+      - name: where
         type: string
-        description: "`workbook` (the whole report), `page` or `container`."
-      - name: page
-        type: any
-        description: "With scope `page`: the page (a `page()` result or id); omit for the current page."
-      - name: container
-        type: any
-        description: "With scope `container`: the container element or its id."
-  - name: open_url
-    description: "Effect: open a URL. Supports `{{formula}}` segments."
-    arguments:
-      - name: url
-        type: string
-        description: "The URL."
-      - name: target
-        type: string
-        description: "`_blank` (new tab), `_self` or `_parent`."
-  - name: navigate
-    description: "Effect: jump to a page or to an element. Pass exactly one of `page` / `element`."
-    arguments:
-      - name: page
-        type: any
-        description: "A `page()` result or page id."
-      - name: element
-        type: any
-        description: "An element or its id."
-  - name: refresh_element
-    description: "Effect: re-run an element's query."
-    arguments:
-      - name: element
-        type: any
-        description: "An element or its id."
-  - name: download
-    description: "Effect: download the report, one page or one element."
-    arguments:
-      - name: format
-        type: string
-        description: "`csv`, `excel`, `json`, `pdf` or `png`."
-      - name: page
-        type: any
-        description: "Export one page (a `page()` result or id)."
-      - name: element
-        type: any
-        description: "Export one element (or its id). With neither, everything is exported."
-      - name: layout
-        type: string
-        description: "PDF only: `portrait` or `landscape`."
-      - name: page_size
-        type: string
-        description: "PDF only: letter, legal, tabloid or a0-a4."
-  - name: schedule
-    description: "A scheduled PDF export of the report. Not part of the report's contents: it is carried on the spec (`report(schedules=)`) and applied by `scripts/export_reports.py --push`, matched to Sigma's by name."
-    arguments:
-      - name: name
-        type: string
-        description: "The schedule's title in Sigma; also how a re-push finds the schedule to update."
-      - name: cron
-        type: string
-        description: "A 5-field cron expression, e.g. `0 8 * * 1`."
-      - name: to
-        type: list[any]
-        description: "Recipients: an email address, or a Sigma target mapping (`teamId`, `slackConversationId`, `webhookUrl`, ...) used as written."
-      - name: timezone
-        type: string
-        description: "IANA timezone name."
-      - name: message
-        type: string
-        description: "Message body."
-      - name: layout
-        type: string
-        description: "PDF layout: `portrait` or `landscape`."
-      - name: scale
-        type: any
-        description: "PDF scale factor."
-      - name: include_link
+        description: "Name of the calling macro, for error messages."
+      - name: require
         type: bool
-        description: "Include a link back to the report."
-      - name: run_as_recipient
-        type: bool
-        description: "Run the export as each recipient, so their data permissions apply."
-      - name: only_if_not_empty
-        type: any
-        description: "Only send when this element (or id) has rows."
-      - name: only_if_empty
-        type: any
-        description: "Only send when this element (or id) has no rows."
-      - name: options
-        type: dict[string,any]
-        description: "Sigma's own `configV2` fields, deep-merged on (control values, attachment settings, ...)."
+        description: "Also raise when a required property is missing."
   - name: new_element
     description: "The scaffolding every element macro starts from: a stable id and a pixel height. For writing your own element macros."
     arguments:
@@ -998,8 +1330,8 @@ macros:
         type: string
         description: "Used for the id when `key` is none."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
   - name: card_style
     description: "The default card look of a data element (white surface, hairline border), or the `style` passed in. `none` when the theme has `cards: false`."
     arguments:
@@ -1110,9 +1442,15 @@ macros:
       - name: table_name
         type: string
         description: "The table's display name in the data model, if it was given a custom `display_name`."
-      - name: table_h
+      - name: table_rows
         type: int
-        description: "Height reserved for the detail table, in pixels."
+        description: "Rows shown in the detail table (sets its height)."
+      - name: table_h
+        type: any
+        description: "Pixel height or `fill` for the detail table; overrides `table_rows`."
+      - name: table_page_count
+        type: int
+        description: "Run the detail table over this many pages of `table_rows` rows (needs `table_sort`)."
       - name: table_sort
         type: list[any]
         description: "Sort for the detail table: fields or (field, 'asc'|'desc') pairs."
@@ -1319,6 +1657,21 @@ macros:
         type: dict[string,any]
         description: "Theme overrides layered on top of the project var."
 
+  # ------------------------------------------------------------ settings
+  - name: settings
+    description: "The effective project settings: package defaults deep-merged with the `sigma_report_settings` project var. Unknown keys fail."
+  - name: setting
+    description: "One setting by name; a non-none `value` wins, which is how an argument that defaults to the project setting is written."
+    arguments:
+      - name: name
+        type: string
+        description: "The setting's name (see `default_settings`)."
+      - name: value
+        type: any
+        description: "An explicit value; when not none it wins over the project setting."
+  - name: default_settings
+    description: "The package's default sizes and calibration constants (page size, margins, element heights, text and table metrics)."
+
   # ------------------------------------------------------------ utilities
   - name: freeze_id
     description: "A deterministic id: the md5 of a stable path, truncated to `length` characters."
@@ -1371,3 +1724,171 @@ macros:
       - name: value
         type: any
         description: "Any structure."
+  # ------------------------------------------------------------ actions
+  - name: button
+    description: "A button. Give it `actions=` to make it do something; see `action` and the effect macros."
+    arguments:
+      - name: text
+        type: string
+        description: "The button label."
+      - name: actions
+        type: list[any]
+        description: "`action(...)` results to attach."
+      - name: key
+        type: string
+        description: "Identity the element's id is derived from; defaults to the name."
+      - name: h
+        type: any
+        description: "Height in pixels, or none for the project's `button_h` setting."
+      - name: appearance
+        type: string
+        description: "`filled`, `outline` or `text`."
+      - name: align
+        type: string
+        description: "`left`, `center`, `right` or `stretch`."
+      - name: size
+        type: string
+        description: "`small`, `medium` or `large`."
+      - name: radius
+        type: string
+        description: "Corner style: `square`, `round` or `pill`."
+  - name: action_triggers
+    description: "The triggers Sigma accepts as a bare string (on-click, on-select, on-change, ...)."
+  - name: action
+    description: "One action sequence: a trigger and the effects that run, in order, when it fires. Attach it with `button(actions=)` or `with_actions`."
+    arguments:
+      - name: trigger
+        type: any
+        description: "A trigger string (see `action_triggers`), or a mapping with an `on` key (an `on-select` scoped to a column, or with a `condition`) used as written."
+      - name: effects
+        type: list[any]
+        description: "Effects built by the effect macros, or by `effect()`."
+      - name: key
+        type: string
+        description: "Keeps the action's id stable if you reorder a list of them; defaults to its position."
+  - name: with_actions
+    description: "Attaches actions to any element (a macro's result or `raw()`). Updates the element in place and returns it; calling it again appends. Ids come from the element id, the trigger and the action's key or position."
+    arguments:
+      - name: el
+        type: dict[string,any]
+        description: "An element built by a sigma_report macro."
+      - name: actions
+        type: list[any]
+        description: "`action(...)` results."
+  - name: effect
+    description: "An effect of any kind, with Sigma's own fields (call-api, insert-rows, update-rows, send-embed-event, if-else, ...)."
+    arguments:
+      - name: name
+        type: string
+        description: "Sigma's effect name, e.g. `call-api`."
+      - name: properties
+        type: dict[string,any]
+        description: "Sigma's own fields for that effect, used as written."
+  - name: set_control_value
+    description: "Effect: set a control to a value."
+    arguments:
+      - name: control
+        type: any
+        description: "The control's id (or an element carrying one)."
+      - name: value
+        type: any
+        description: "A string, number, boolean or list of strings (typed for you), or a Sigma value mapping used as written."
+  - name: clear_control
+    description: "Effect: clear one control."
+    arguments:
+      - name: control
+        type: any
+        description: "The control's id."
+  - name: clear_controls
+    description: "Effect: clear many controls at once."
+    arguments:
+      - name: scope
+        type: string
+        description: "`workbook` (the whole report), `page` or `container`."
+      - name: page
+        type: any
+        description: "With scope `page`: the page (a `page()` result or id); omit for the current page."
+      - name: container
+        type: any
+        description: "With scope `container`: the container element or its id."
+  - name: open_url
+    description: "Effect: open a URL. Supports `{{formula}}` segments."
+    arguments:
+      - name: url
+        type: string
+        description: "The URL."
+      - name: target
+        type: string
+        description: "`_blank` (new tab), `_self` or `_parent`."
+  - name: navigate
+    description: "Effect: jump to a page or to an element. Pass exactly one of `page` / `element`."
+    arguments:
+      - name: page
+        type: any
+        description: "A `page()` result or page id."
+      - name: element
+        type: any
+        description: "An element or its id."
+  - name: refresh_element
+    description: "Effect: re-run an element's query."
+    arguments:
+      - name: element
+        type: any
+        description: "An element or its id."
+  - name: download
+    description: "Effect: download the report, one page or one element."
+    arguments:
+      - name: format
+        type: string
+        description: "`csv`, `excel`, `json`, `pdf` or `png`."
+      - name: page
+        type: any
+        description: "Export one page (a `page()` result or id)."
+      - name: element
+        type: any
+        description: "Export one element (or its id). With neither, everything is exported."
+      - name: layout
+        type: string
+        description: "PDF only: `portrait` or `landscape`."
+      - name: page_size
+        type: string
+        description: "PDF only: letter, legal, tabloid or a0-a4."
+  - name: schedule
+    description: "A scheduled PDF export of the report. Not part of the report's contents: it is carried on the spec (`report(schedules=)`) and applied by `scripts/export_reports.py --push`, matched to Sigma's by name."
+    arguments:
+      - name: name
+        type: string
+        description: "The schedule's title in Sigma; also how a re-push finds the schedule to update."
+      - name: cron
+        type: string
+        description: "A 5-field cron expression, e.g. `0 8 * * 1`."
+      - name: to
+        type: list[any]
+        description: "Recipients: an email address, or a Sigma target mapping (`teamId`, `slackConversationId`, `webhookUrl`, ...) used as written."
+      - name: timezone
+        type: string
+        description: "IANA timezone name."
+      - name: message
+        type: string
+        description: "Message body."
+      - name: layout
+        type: string
+        description: "PDF layout: `portrait` or `landscape`."
+      - name: scale
+        type: any
+        description: "PDF scale factor."
+      - name: include_link
+        type: bool
+        description: "Include a link back to the report."
+      - name: run_as_recipient
+        type: bool
+        description: "Run the export as each recipient, so their data permissions apply."
+      - name: only_if_not_empty
+        type: any
+        description: "Only send when this element (or id) has rows."
+      - name: only_if_empty
+        type: any
+        description: "Only send when this element (or id) has no rows."
+      - name: options
+        type: dict[string,any]
+        description: "Sigma's own `configV2` fields, deep-merged on (control values, attachment settings, ...)."

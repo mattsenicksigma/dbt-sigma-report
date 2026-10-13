@@ -42,8 +42,8 @@
 
 
 {# A button. `appearance`: filled / outline / text. `align`: left / center / right / stretch. #}
-{% macro button(text, actions=[], key=none, h=40, appearance='filled', align='left', size='medium', radius='round') %}
-{% set el = sigma_report.new_element('button', 'button', key, text, h) %}
+{% macro button(text, actions=[], key=none, h=none, appearance='filled', align='left', size='medium', radius='round') %}
+{% set el = sigma_report.new_element('button', 'button', key, text, sigma_report.setting('button_h', h)) %}
 {% if appearance not in ['filled', 'outline', 'text'] %}
   {% do sigma_report.fail('button', "appearance must be 'filled', 'outline' or 'text', got '" ~ appearance ~ "'.") %}
 {% endif %}

@@ -45,7 +45,10 @@
      page_size    'letter' (default), 'legal', 'tabloid', 'a4', 'a3', 'screen', or {width: px, height: px}
      orientation  'portrait' / 'landscape'; none keeps the preset's own shape
      margin       page margin in pixels
-     gap          vertical space between blocks, in pixels
+     gap          space between blocks, in pixels
+
+   page_size, margin, gap, header_height and footer_height default to the project's
+   `sigma_report_settings` (see core/settings.sql), so a team sets them once.
      header       elements / rows for the header panel, repeated on every page (none = no header)
      footer       elements / rows for the footer panel
      header_height, footer_height   panel heights in pixels
@@ -57,10 +60,16 @@
 
    Everything is validated here, at parse time: an empty page, a duplicate page name, an element used
    twice, or content that does not fit its page fails `dbt parse` rather than reaching Sigma. #}
-{% macro report(name, pages, theme={}, folder_id=none, report_id=none, description=none, page_size='letter', orientation=none, margin=48, gap=16, header=none, footer=none, header_height=48, footer_height=32, schedules=[]) %}
+{% macro report(name, pages, theme={}, folder_id=none, report_id=none, description=none, page_size=none, orientation=none, margin=none, gap=none, header=none, footer=none, header_height=none, footer_height=none, schedules=[]) %}
 {% if not pages %}
   {% do sigma_report.fail('report', "pages must not be empty.") %}
 {% endif %}
+{% set page_size = sigma_report.setting('page_size', page_size) %}
+{% set margin = sigma_report.setting('margin', margin) %}
+{% set gap = sigma_report.setting('gap', gap) %}
+{% set header_height = sigma_report.setting('header_height', header_height) %}
+{% set footer_height = sigma_report.setting('footer_height', footer_height) %}
+{% set overlap_ok = [] %}
 {% set dims = sigma_report.page_dimensions(page_size, orientation) %}
 {% set content_w = dims['width'] - 2 * margin %}
 {% set panel_space = (header_height if header else 0) + (footer_height if footer else 0) %}
@@ -99,6 +108,7 @@
     {% do page_names.append(page_name) %}
     {% do page_stubs.append({"id": page_id, "name": page_name}) %}
     {% do layout_roots.append(sigma_report.page_xml(page_id, sheet['placements'])) %}
+    {% for pl in sheet['placements'] if pl.get('overlap') %}{% do overlap_ok.append(pl['element']['id']) %}{% endfor %}
     {% for el in sigma_report.placed_elements(sheet['placements']) %}
       {% if el['id'] in seen_ids %}
         {% do sigma_report.fail('report', "'" ~ el['_key'] ~ "' and '" ~ seen_ids[el['id']] ~ "' resolve to the same element id (an element can be placed once). Give one of them a distinct `key=`.") %}
@@ -116,6 +126,7 @@
   {% for stub in page_stubs %}{% do ids.append(stub['id']) %}{% endfor %}
   {% do panels.append({"id": panel['id'], "type": panel['type'], "title": panel['type'] | title, "config": config, "pages": ids}) %}
   {% do layout_roots.append(sigma_report.panel_xml(panel['id'], panel['type'], panel['placements'])) %}
+  {% for pl in panel['placements'] if pl.get('overlap') %}{% do overlap_ok.append(pl['element']['id']) %}{% endfor %}
   {% for el in sigma_report.placed_elements(panel['placements']) %}
     {% if el['id'] in seen_ids %}
       {% do sigma_report.fail('report', "'" ~ el['_key'] ~ "' and '" ~ seen_ids[el['id']] ~ "' resolve to the same element id (an element can be placed once). Give one of them a distinct `key=`.") %}
@@ -158,6 +169,10 @@
     {% do titles.append(s['configV2']['title']) %}
   {% endfor %}
   {% do spec.update({"schedules": schedules}) %}
+{% endif %}
+{# bookkeeping for the geometry check; `_`-prefixed keys never reach Sigma (export_reports.request_body) #}
+{% if overlap_ok %}
+  {% do spec.update({"_overlap_ok": overlap_ok}) %}
 {% endif %}
 {% if description %}
   {% do spec.update({"description": description}) %}
