@@ -1200,3 +1200,18 @@ macros:
       - name: value
         type: any
         description: "Any structure."
+  - name: filter_by_value
+    description: "Restricts a finished report to the given values of one source column: adds a hidden column and a `list` filter to every element built on a warehouse table. The spec is updated in place and returned."
+    arguments:
+      - name: spec
+        type: dict[string,any]
+        description: "A finished report spec, from report() or a simple_* macro."
+      - name: column
+        type: string
+        description: "The source column to filter on. A bare lowercase name is title-cased the way Sigma shows it."
+      - name: values
+        type: list[any]
+        description: "The values to keep (or drop, with mode='exclude'). Must not be empty."
+      - name: mode
+        type: string
+        description: "`include` (default) keeps only `values`; `exclude` drops them."
