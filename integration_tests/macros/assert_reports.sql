@@ -322,6 +322,15 @@
 {% endmacro %}
 
 
+{% macro _check_untitled() %}
+{% set t = sigma_report_integration_tests %}
+{% set u = t._spec_of('sigma_sales_untitled').contents %}
+{% do t._ok(not t._text_has(u.elements, 'Sales untitled') and not t._text_has(u.elements, 'Never shown'), 'simple_dashboard: show_title=false leaves out the title and subtitle') %}
+{% set s = t._spec_of('sigma_sales_simple').contents %}
+{% do t._ok(u.elements | length > 0 and u.elements | length < s.elements | length, 'simple_dashboard: show_title=false drops the title elements and keeps the rest') %}
+{% endmacro %}
+
+
 {% macro _check_flexible() %}
 {% set t = sigma_report_integration_tests %}
 {% set spec = t._spec_of('sigma_flexible_layout') %}
@@ -480,6 +489,7 @@
 {% do t._check_manual() %}
 {% do t._check_long_form() %}
 {% do t._check_flexible() %}
+{% do t._check_untitled() %}
 {% do t._check_leaderboard() %}
 {% do t._check_presets() %}
 {% do t._check_pagination() %}

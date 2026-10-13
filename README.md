@@ -172,7 +172,7 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 
 ### Dashboards in one call
 
-`simple_dashboard` is the general-purpose shape: title, KPI band, charts two to a row, optional detail table. Every part is optional. `simple_leaderboard` is a second one built from the same pieces: a KPI plus one ranked horizontal bar chart per dimension.
+`simple_dashboard` is the general-purpose shape: title, KPI band, charts two to a row, optional detail table. Every part is optional; `show_title=false` drops the title block. `simple_leaderboard` is a second one built from the same pieces: a KPI plus one ranked horizontal bar chart per dimension.
 
 ```sql
 {% set spec = sigma_report.simple_leaderboard(

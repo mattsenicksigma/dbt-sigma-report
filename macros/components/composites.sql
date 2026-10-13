@@ -142,14 +142,15 @@
    `table_rows` rows each instead - see `table_pages` - or `table_paginate=true` to let Sigma expand the
    table to all its rows when the report renders (it must then be the last block). Content that does not
    fit one page continues on the next
-   (`paginate=true`). Pass any `sigma_report.report()` argument through `report_args`
+   (`paginate=true`). Pass `show_title=false` to leave out the title, subtitle and rule (the report is still
+   named `name`). Pass any `sigma_report.report()` argument through `report_args`
    (page_size, orientation, margin, header, footer, theme, ...). The result is a finished report spec,
    ready for `sigma_report.materialize()`.
 
    It is built from the public macros only; when you outgrow it, write the same thing by hand with
    `page()` and `row()`. #}
-{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_rows=none, table_h=none, table_page_count=none, table_paginate=false, table_sort=[], report_args={}) %}
-{% set blocks = sigma_report.report_header(name, subtitle) %}
+{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_rows=none, table_h=none, table_page_count=none, table_paginate=false, table_sort=[], show_title=true, report_args={}) %}
+{% set blocks = sigma_report.report_header(name, subtitle) if show_title else [] %}
 {% if kpis %}
   {% set tiles = [] %}
   {% for spec in kpis %}{% do tiles.append(sigma_report.kpi_from_spec(source, spec)) %}{% endfor %}

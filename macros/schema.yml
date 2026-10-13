@@ -1469,6 +1469,9 @@ macros:
       - name: table_sort
         type: list[any]
         description: "Sort for the detail table: fields or (field, 'asc'|'desc') pairs."
+      - name: show_title
+        type: bool
+        description: "Include the title, subtitle and rule at the top. Pass false to start straight at the KPIs or charts."
       - name: report_args
         type: dict[string,any]
         description: "Any `sigma_report.report()` argument as a mapping: theme, folder_id, report_id, description, page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers, schedules."
