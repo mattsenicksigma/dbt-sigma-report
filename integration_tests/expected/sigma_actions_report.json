@@ -1,0 +1,221 @@
+{
+  "contents": {
+    "config": {
+      "margin": 48,
+      "pageHeight": 1056,
+      "pageWidth": 816
+    },
+    "elements": [
+      {
+        "actions": [
+          {
+            "effects": [
+              {
+                "effect": "refresh-element",
+                "target": {
+                  "element": "3f0a211ee4",
+                  "type": "element"
+                }
+              },
+              {
+                "effect": "navigate",
+                "target": {
+                  "page": "81f1f8f7de",
+                  "type": "page"
+                }
+              }
+            ],
+            "id": "ab4a972ac9",
+            "trigger": "on-click"
+          }
+        ],
+        "align": "left",
+        "appearance": "filled",
+        "borderRadius": "round",
+        "fillColor": "#1A70F1",
+        "id": "985ad06fe9",
+        "kind": "button",
+        "size": "medium",
+        "text": "Refresh orders"
+      },
+      {
+        "actions": [
+          {
+            "effects": [
+              {
+                "channel": "download",
+                "effect": "export",
+                "format": {
+                  "layout": "landscape",
+                  "pageSize": "a4",
+                  "type": "pdf"
+                },
+                "source": {
+                  "type": "all"
+                }
+              }
+            ],
+            "id": "0d6a909439",
+            "trigger": "on-click"
+          }
+        ],
+        "align": "left",
+        "appearance": "outline",
+        "borderRadius": "round",
+        "id": "f86a4e0cd6",
+        "kind": "button",
+        "size": "medium",
+        "text": "Download PDF"
+      },
+      {
+        "actions": [
+          {
+            "effects": [
+              {
+                "effect": "clear-control",
+                "scope": {
+                  "type": "page"
+                }
+              },
+              {
+                "control": "region-control",
+                "effect": "set-control-value",
+                "value": {
+                  "type": "constant",
+                  "value": {
+                    "type": "text",
+                    "value": "West"
+                  }
+                }
+              },
+              {
+                "effect": "open-url",
+                "openTarget": "_blank",
+                "url": "https://example.com/help"
+              }
+            ],
+            "id": "9ca530b533",
+            "trigger": "on-click"
+          }
+        ],
+        "align": "right",
+        "appearance": "text",
+        "borderRadius": "round",
+        "id": "ebfc1ad796",
+        "kind": "button",
+        "size": "medium",
+        "text": "Reset filters"
+      },
+      {
+        "body": "### Orders",
+        "id": "5186c25f6d",
+        "kind": "text",
+        "verticalAlign": "center"
+      },
+      {
+        "actions": [
+          {
+            "effects": [
+              {
+                "connectorId": "<your-connector-id>",
+                "effect": "call-api"
+              }
+            ],
+            "id": "5ada969304",
+            "trigger": "on-select"
+          }
+        ],
+        "columns": [
+          {
+            "formula": "[stg_orders/Order Id]",
+            "id": "ce0712d6fe"
+          },
+          {
+            "formula": "[stg_orders/Order Date]",
+            "id": "fa1100cb2a"
+          },
+          {
+            "formula": "[stg_orders/Region]",
+            "id": "44ab17cca8"
+          },
+          {
+            "formula": "[stg_orders/Amount]",
+            "id": "87893484a8"
+          }
+        ],
+        "id": "3f0a211ee4",
+        "kind": "table",
+        "name": "Orders",
+        "order": [
+          "ce0712d6fe",
+          "fa1100cb2a",
+          "44ab17cca8",
+          "87893484a8"
+        ],
+        "source": {
+          "connectionId": "00000000-0000-0000-0000-000000000001",
+          "kind": "warehouse-table",
+          "path": [
+            "integration_tests",
+            "main",
+            "stg_orders"
+          ]
+        },
+        "style": {
+          "backgroundColor": "#ffffff",
+          "borderColor": "#e5e5e5",
+          "borderRadius": "round",
+          "borderWidth": 1
+        }
+      },
+      {
+        "body": "Notes go here.",
+        "id": "29a2dfef17",
+        "kind": "text",
+        "verticalAlign": "top"
+      }
+    ],
+    "kind": "report",
+    "layout": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Page id=\"348e718e5d\">\n  <Element elementId=\"985ad06fe9\" x=\"0\" y=\"0\" width=\"229\" height=\"40\"/>\n  <Element elementId=\"f86a4e0cd6\" x=\"245\" y=\"0\" width=\"229\" height=\"40\"/>\n  <Element elementId=\"ebfc1ad796\" x=\"490\" y=\"0\" width=\"230\" height=\"40\"/>\n  <Element elementId=\"5186c25f6d\" x=\"0\" y=\"56\" width=\"720\" height=\"32\"/>\n  <Element elementId=\"3f0a211ee4\" x=\"0\" y=\"104\" width=\"720\" height=\"240\"/>\n</Page>\n<Page id=\"81f1f8f7de\">\n  <Element elementId=\"29a2dfef17\" x=\"0\" y=\"0\" width=\"720\" height=\"28\"/>\n</Page>\n",
+    "pages": [
+      {
+        "id": "348e718e5d",
+        "name": "Summary"
+      },
+      {
+        "id": "81f1f8f7de",
+        "name": "Notes"
+      }
+    ],
+    "schemaVersion": 1,
+    "settings": {
+      "theme": {
+        "name": "Light",
+        "overrides": {
+          "borderRadius": "round",
+          "categoricalScheme": "superbloom",
+          "colorOverrides": [
+            {
+              "color": "#fafafa",
+              "name": "backgroundCanvas"
+            }
+          ],
+          "colors": {
+            "danger": "#c10007",
+            "highlight": "#1A70F1",
+            "success": "#008236",
+            "surface": "#ffffff",
+            "text": "#0a0a0a",
+            "warning": "#bb4d00"
+          },
+          "fonts": {
+            "dataFont": "Inter",
+            "textFont": "Inter"
+          }
+        }
+      }
+    }
+  },
+  "folderId": "00000000-0000-0000-0000-000000000002",
+  "name": "Actions report"
+}

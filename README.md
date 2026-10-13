@@ -128,6 +128,8 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 | Report presets | `simple_executive_summary`, `simple_period_review`, `simple_statement` |
 | Sources | `from_ref`, `from_source`, `from_data_model`, `warehouse_table`, `data_model`, `element` |
 | Fields | `field`, `format_currency`, `format_integer`, `format_percent`, `format_compact`, `format_number`, `format_date` |
+| Actions | `button`, `action`, `with_actions`, and effects: `set_control_value`, `clear_control`, `clear_controls`, `open_url`, `navigate`, `refresh_element`, `download`, `effect` |
+| Schedules | `schedule` (passed to `report(schedules=[...])`) |
 | Escape hatches | `extend`, `raw` |
 | Theme | `theme`, `color`, plus the `sigma_report_theme` var |
 
@@ -175,6 +177,46 @@ Reports have no per-viewer filters, so `simple_statement` describes whatever its
 ### Building your own
 
 `simple_dashboard` uses only public macros; when you outgrow it, write the same thing by hand. [`integration_tests/models/sigma_sales_report.sql`](integration_tests/models/sigma_sales_report.sql) is a runnable two-page example with header and footer panels, a pivot, a calculated column, a chart built on a table that is already on the page, and both escape hatches.
+
+### Actions
+
+Sigma's request schema for reports takes an `actions` array on buttons, tables, controls, charts and KPIs: the same sequences workbooks have. An action is a trigger plus effects that run in order.
+
+```sql
+{% set refresh = sigma_report.button('Refresh', key='refresh', actions=[
+    sigma_report.action('on-click', [
+        sigma_report.refresh_element(orders),
+        sigma_report.navigate(page=notes),
+    ]),
+]) %}
+
+{# or onto an element you already built #}
+{% do sigma_report.with_actions(orders, [
+    sigma_report.action('on-select', [sigma_report.set_control_value('region-control', 'West')]),
+]) %}
+```
+
+Effects with no builder (`call-api`, `insert-rows`, `update-rows`, `send-embed-event`, `if-else`, ...) go through `effect('call-api', {...})` with Sigma's own fields. Action ids are derived from the element id, trigger and position (or `key=`), so they are stable across compiles. [`integration_tests/models/sigma_actions_report.sql`](integration_tests/models/sigma_actions_report.sql) is a runnable example.
+
+The schema accepts all of this (it is checked in CI). Whether a rendered, paginated report *runs* its actions is Sigma's behavior, not something the package can prove: check a real report after `--push --dry-run`.
+
+### Scheduled exports
+
+There is no scheduled trigger for actions, and a report's contents have no schedule field. Schedules are a separate Sigma resource (`/v2/reports/{id}/schedules`), and reports export only as a whole PDF. So `schedule(...)` is compiled as data, carried on the spec beside `contents`, and applied by the export script after the report exists:
+
+```sql
+{% set spec = sigma_report.report(
+    name='Sales report',
+    pages=[...],
+    schedules=[
+      sigma_report.schedule('Weekly sales', cron='0 8 * * 1', timezone='America/New_York',
+          to=['finance@example.com', {'teamId': '<your-team-id>'}],
+          message='This week''s numbers.', only_if_not_empty=orders),
+    ],
+) %}
+```
+
+`export_reports.py --push` creates each schedule, or updates the one with the same name (the title Sigma shows; renaming creates a new schedule). It never deletes schedules, and `--dry-run` doesn't touch them since Sigma has no dry run for them. `--out` writes them to `<model>.schedules.json`. Anything the macro does not model (control values, attachment merging, a column condition) goes in `options={...}`, merged onto Sigma's `configV2`.
 
 ### Escape hatches
 
@@ -253,7 +295,7 @@ python dbt_packages/sigma_report/scripts/export_reports.py --push               
 
 The script needs only the Python standard library. Pushing needs [API credentials](https://help.sigmacomputing.com/docs/generate-api-client-credentials) in `SIGMA_BASE_URL` (your cloud's API URL), `SIGMA_CLIENT_ID` and `SIGMA_CLIENT_SECRET`.
 
-- First push creates the report (`POST /v2/reports`). Note the `reportId` Sigma returns and pass it as `report_id=` (or `report_args={'report_id': ...}`) from then on: the next push replaces that report's contents in place (`PUT /v2/reports/{id}/contents`), so the report keeps its URL, schedules and sharing.
+- First push creates the report (`POST /v2/reports`). Note the `reportId` Sigma returns and pass it as `report_id=` (or `report_args={'report_id': ...}`) from then on: the next push replaces that report's contents in place (`PUT /v2/reports/{id}/contents`), so the report keeps its URL, schedules and sharing. Any `schedules=` on the report are applied after the push (see [Scheduled exports](#scheduled-exports)).
 - `--dry-run` sends `dryRun: true`, which validates formulas, sources and layout without saving. Run it against your own organization after any change to what elements look like.
 - The script refuses to push an `unresolved:` data model id or the all-zero placeholder ids used in this repository's tests.
 
@@ -293,8 +335,9 @@ CI (`.github/workflows/integration-tests.yml`) runs all of it on dbt 1.x and dbt
 An initial version aimed at dashboards.
 
 - **Validated against Sigma's schema, not rendered in CI.** The request schema check, the geometry check and the golden files run in CI. CI has no Sigma credentials, so how a report *looks* in Sigma, and whether Sigma accepts the formulas against your data, is checked by `--push --dry-run` against your own organization. Panel sizing in particular is an assumption: header and footer heights are subtracted from the content area, which is safe (no overlap) but may leave more white space than Sigma needs.
-- **Modeled elements**: KPI, bar / line / area / scatter / pie / donut charts, table, pivot table, text, divider, image. Not modeled (use [`raw`](#escape-hatches)): combo, waterfall, funnel, gauge, sankey, treemap and box charts, maps, input tables, buttons, embeds, repeated containers, conditional formatting, reference marks, trellis.
-- **No controls.** Reports have no interactive controls in Sigma's code representation.
+- **Modeled elements**: KPI, bar / line / area / scatter / pie / donut charts, table, pivot table, text, divider, image. Not modeled (use [`raw`](#escape-hatches)): combo, waterfall, funnel, gauge, sankey, treemap and box charts, maps, input tables, embeds, repeated containers, conditional formatting, reference marks, trellis.
+- **No control macros.** Sigma's schema does have report controls (and actions can set them by id), but the package does not build them yet; use [`raw`](#escape-hatches).
+- **Schedule bodies are checked offline only** (cron, recipients, unique names, the element a condition tests). Sigma's schema check in CI covers a report's contents, not its schedules.
 - **Layout is a vertical flow** of rows and stacks. There is no free x/y placement and no nesting of rows inside stacks beyond one level; `raw` elements still sit in the same flow.
 - **Heights are yours to choose.** Table and text height depend on data and content that the compiler cannot see.
 - **Source paths** use `target.database` / `target.schema` unless overridden (see [Sources](#sources)).
