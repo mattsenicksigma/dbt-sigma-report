@@ -8,6 +8,8 @@ cannot be caught by looking at the JSON. This parses `contents.layout` and check
 
   * every element sits inside the content area (page size minus margin, minus the header / footer panels);
   * no two elements overlap;
+  * a `flow="paginated"` element (an expanded table) is the last thing on its page, since the report
+    grows it at render time and nothing below it has a known position;
 
 and, per `<Panel>`, that its elements fit the panel's width and height. Exit status is non-zero on any
 violation, so it can gate CI.
@@ -36,6 +38,7 @@ def violations(name, spec):
             (e.get("elementId"), float(e.get("x")), float(e.get("y")), float(e.get("width")), float(e.get("height")))
             for e in node.findall("Element")
         ]
+        flows = {e.get("elementId"): e.get("flow") for e in node.findall("Element") if e.get("flow")}
         if node.tag == "Page":
             limit_w, limit_h, label = content_w, content_h, "page " + node.get("id")
         elif node.tag == "Panel":
@@ -48,6 +51,16 @@ def violations(name, spec):
                 problems.append("%s: %s: %s has a non-positive or negative box" % (name, label, element_id))
             if x + w > limit_w + 0.01 or y + h > limit_h + 0.01:
                 problems.append("%s: %s: %s ends at (%g, %g) outside the %gx%g area" % (name, label, element_id, x + w, y + h, limit_w, limit_h))
+        for element_id, flow in flows.items():
+            if flow != "paginated":
+                problems.append("%s: %s: %s has unknown flow '%s'" % (name, label, element_id, flow))
+            elif node.tag == "Panel":
+                problems.append("%s: %s: %s is paginated, which a panel cannot hold" % (name, label, element_id))
+            else:
+                top = next(b[2] for b in boxes if b[0] == element_id)
+                for b in boxes:
+                    if b[0] != element_id and b[2] >= top:
+                        problems.append("%s: %s: %s is paginated but %s sits at or below it" % (name, label, element_id, b[0]))
         for i, a in enumerate(boxes):
             for b in boxes[i + 1:]:
                 if a[1] < b[1] + b[3] and b[1] < a[1] + a[3] and a[2] < b[2] + b[4] and b[2] < a[2] + a[4]:

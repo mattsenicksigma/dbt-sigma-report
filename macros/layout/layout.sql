@@ -26,8 +26,9 @@
    elements in pixels; it defaults to the report's gap. `pad` reserves that much trailing weight as
    empty space, which is how `grid()` keeps a short last row the same cell width as the rows above it.
    A row may hold elements, `stack(...)`s and lists of them (the composites return lists), but not
-   other rows. #}
-{% macro row(elements, widths=none, gap=none, pad=0) %}
+   other rows. `lead` is the same idea at the start: empty weight before the first element, which is
+   how a single element sits at the right of the page. #}
+{% macro row(elements, widths=none, gap=none, pad=0, lead=0) %}
 {% set items = sigma_report.flatten(elements) %}
 {% if not items %}
   {% do sigma_report.fail('row', "a row needs at least one element.") %}
@@ -49,9 +50,12 @@
   {% if weights[loop.index0] is not number or weights[loop.index0] <= 0 %}
     {% do sigma_report.fail('row', "widths must be positive numbers, got " ~ weights[loop.index0]) %}
   {% endif %}
+  {% if item.get('_flow') %}
+    {% do sigma_report.fail('row', "a paginated table spans the page width and grows at render time, so it cannot sit in a row - put it directly on the page.") %}
+  {% endif %}
   {% if item['_h'] > tallest.h %}{% set tallest.h = item['_h'] %}{% endif %}
 {% endfor %}
-{% do return({"_row": items, "_widths": weights, "_gap": gap, "_pad": pad, "_h": tallest.h}) %}
+{% do return({"_row": items, "_widths": weights, "_gap": gap, "_pad": pad, "_lead": lead, "_h": tallest.h}) %}
 {% endmacro %}
 
 
@@ -70,6 +74,9 @@
 {% for item in items %}
   {% if item is not mapping or 'id' not in item %}
     {% do sigma_report.fail('stack', "a stack holds elements built by sigma_report macros, got " ~ item) %}
+  {% endif %}
+  {% if item.get('_flow') %}
+    {% do sigma_report.fail('stack', "a paginated table spans the page width and grows at render time, so it cannot sit in a stack - put it directly on the page.") %}
   {% endif %}
   {% set total.h = total.h + item['_h'] %}
 {% endfor %}
@@ -123,11 +130,15 @@
 {% if '_row' in block %}
   {% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
   {% set pad = block['_pad'] %}
-  {% set n = (block['_row'] | length) + (1 if pad > 0 else 0) %}
+  {% set lead = block['_lead'] %}
+  {% set n = (block['_row'] | length) + (1 if pad > 0 else 0) + (1 if lead > 0 else 0) %}
   {% set usable = content_w - row_gap * (n - 1) %}
-  {% set total = namespace(weight=pad) %}
+  {% set total = namespace(weight=pad + lead) %}
   {% for w in block['_widths'] %}{% set total.weight = total.weight + w %}{% endfor %}
   {% set cursor = namespace(x=0) %}
+  {% if lead > 0 %}
+    {% set cursor.x = (usable * lead / total.weight) | int + row_gap %}
+  {% endif %}
   {% for el in block['_row'] %}
     {% if loop.last and pad <= 0 %}
       {% set width = content_w - cursor.x %}
@@ -167,6 +178,14 @@
     {% do sigma_report.fail(where, "blocks are elements or rows; a stack(...) belongs inside a row(...), got " ~ block) %}
   {% endif %}
   {% set h = block['_h'] %}
+  {% if block.get('_flow') %}
+    {% if where in ['header', 'footer'] %}
+      {% do sigma_report.fail(where, "a paginated table cannot sit in a " ~ where ~ " panel: it would grow past the panel.") %}
+    {% endif %}
+    {% if not loop.last %}
+      {% do sigma_report.fail(where, "a paginated table must be the last block on its page: it grows at render time and the package cannot know how far content below it would be pushed. Move what follows above the table, or into the footer.") %}
+    {% endif %}
+  {% endif %}
   {% if h > content_h %}
     {% do sigma_report.fail(where, "a block is " ~ h ~ "px tall but the page's content area is only " ~ content_h ~ "px. Lower its `h=`, or use a larger page_size / smaller margin.") %}
   {% endif %}
@@ -195,7 +214,8 @@
 {% set pad = '  ' * indent %}
 {% set lines = [] %}
 {% for p in placements %}
-  {% do lines.append(pad ~ '<Element elementId="' ~ p['element']['id'] ~ '" x="' ~ p['x'] ~ '" y="' ~ p['y'] ~ '" width="' ~ p['width'] ~ '" height="' ~ p['height'] ~ '"/>') %}
+  {% set flow_attr = (' flow="' ~ p['element']['_flow'] ~ '"') if p['element'].get('_flow') else '' %}
+  {% do lines.append(pad ~ '<Element elementId="' ~ p['element']['id'] ~ '" x="' ~ p['x'] ~ '" y="' ~ p['y'] ~ '" width="' ~ p['width'] ~ '" height="' ~ p['height'] ~ '"' ~ flow_attr ~ '/>') %}
 {% endfor %}
 {% do return(lines | join('\n')) %}
 {% endmacro %}

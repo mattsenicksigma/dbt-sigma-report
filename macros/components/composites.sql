@@ -90,7 +90,7 @@
 
 {# Assembles blocks into a one-page, paginating report. The shared tail of the `simple_*` composites:
    `args` is a mapping of `sigma_report.report()` arguments (theme, folder_id, report_id, description,
-   page_size, orientation, margin, gap, header, footer, header_height, footer_height). Public so your
+   page_size, orientation, margin, gap, header, footer, header_height, footer_height, page_numbers). Public so your
    own composites can end the same way. #}
 {% macro report_from_args(name, blocks, args={}) %}
 {% set a = {"page_size": "letter"} %}
@@ -101,7 +101,8 @@
   theme=a.get('theme', {}), folder_id=a.get('folder_id'), report_id=a.get('report_id'),
   description=a.get('description'), page_size=a['page_size'], orientation=a.get('orientation'),
   margin=a.get('margin', 48), gap=a.get('gap', 16), header=a.get('header'), footer=a.get('footer'),
-  header_height=a.get('header_height', 48), footer_height=a.get('footer_height', 32)
+  header_height=a.get('header_height', 48), footer_height=a.get('footer_height', 32),
+  page_numbers=a.get('page_numbers', false)
 )) %}
 {% endmacro %}
 
@@ -122,14 +123,15 @@
 
    `kpis` and `charts` are lists of mappings (see `kpi_from_spec` / `chart_from_spec`); charts are laid
    out two to a row (`charts_per_row`). The table is the detail view: it is built on the same source
-   and takes `table_h` pixels. Content that does not fit one page continues on the next
+   and takes `table_h` pixels; `table_paginate=true` expands it to all its rows when the report renders
+   (see `table`). Content that does not fit one page continues on the next
    (`paginate=true`). Pass any `sigma_report.report()` argument through `report_args`
    (page_size, orientation, margin, header, footer, theme, ...). The result is a finished report spec,
    ready for `sigma_report.materialize()`.
 
    It is built from the public macros only; when you outgrow it, write the same thing by hand with
    `page()` and `row()`. #}
-{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_h=300, table_sort=[], report_args={}) %}
+{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_h=300, table_sort=[], table_paginate=false, report_args={}) %}
 {% set blocks = sigma_report.report_header(name, subtitle) %}
 {% if kpis %}
   {% set tiles = [] %}
@@ -142,7 +144,7 @@
   {% for r in sigma_report.grid(figures, per_row=charts_per_row) %}{% do blocks.append(r) %}{% endfor %}
 {% endif %}
 {% if table_columns %}
-  {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, h=table_h, sort=table_sort)) %}
+  {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, h=table_h, sort=table_sort, paginate=table_paginate)) %}
 {% endif %}
 {% do return(sigma_report.report_from_args(name, blocks, report_args)) %}
 {% endmacro %}

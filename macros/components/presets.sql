@@ -126,7 +126,7 @@
 {% endmacro %}
 
 
-{# A statement or invoice: who and when, the line items, and the totals. The case where a paginated
+{# A statement or invoice: who and when, what is owed, and the line items. The case where a paginated
    report is the right object and a workbook is not.
 
      sigma_report.simple_statement(
@@ -138,26 +138,32 @@
        footer_note='Payment terms: net 30.',
      )
 
-   `columns` (required) are the line-item table's fields. A table's row count is not known when the
-   report is compiled, so `rows_h` is the height you reserve for it (default 420px); a block must fit
-   on one page, so a statement longer than that is a table taller than the page and fails at compile
-   time - size `rows_h` for the longest statement you expect. `totals` are KPI mappings shown in a
-   band under the table. `facts` is a list of [label, value] pairs shown above it; `footer_note` is
-   plain text below the totals. #}
+   `columns` (required) are the line-item table's fields. The table is *paginated*: it grows to hold
+   every row when the report renders and continues onto further pages, so a statement can be any
+   length. Because the package cannot know how far it will grow, it is the last thing on its page; the
+   totals therefore sit above it (amount due first, as on most invoices) and `footer_note` goes in the
+   page footer, which repeats on every page next to a "page of pages" number (`page_numbers` is on
+   unless `report_args` says otherwise). `rows_h` is the height the table starts with. `facts` is a
+   list of [label, value] pairs shown above the totals; `totals` are KPI mappings. #}
 {% macro simple_statement(name, source, columns, facts=[], totals=[], footer_note=none, rows_name='Line items', rows_h=420, rows_sort=[], subtitle=none, report_args={}) %}
 {% if not columns %}
   {% do sigma_report.fail('simple_statement', "columns is required - list the fields the line-item table should show.") %}
+{% endif %}
+{% if footer_note and report_args.get('footer') %}
+  {% do sigma_report.fail('simple_statement', "footer_note and report_args.footer both set - put the note in your own footer, or drop one of them.") %}
 {% endif %}
 {% set blocks = sigma_report.report_header(name, subtitle) %}
 {% if facts %}
   {% do blocks.append(sigma_report.facts_line(facts, key='statement-facts')) %}
 {% endif %}
-{% do blocks.append(sigma_report.table(source, columns, name=rows_name, h=rows_h, sort=rows_sort)) %}
 {% if totals %}
   {% do blocks.append(sigma_report.kpi_row(sigma_report._kpis_with(source, totals, {'h': 80}, 'simple_statement'))) %}
 {% endif %}
+{% do blocks.append(sigma_report.table(source, columns, name=rows_name, h=rows_h, sort=rows_sort, paginate=true)) %}
+{% set args = {'page_numbers': true} %}
+{% do args.update(report_args) %}
 {% if footer_note %}
-  {% do blocks.append(sigma_report.text(footer_note, key='statement-note')) %}
+  {% do args.update({'footer': [sigma_report.text(footer_note, key='statement-note')]}) %}
 {% endif %}
-{% do return(sigma_report.report_from_args(name, blocks, report_args)) %}
+{% do return(sigma_report.report_from_args(name, blocks, args)) %}
 {% endmacro %}

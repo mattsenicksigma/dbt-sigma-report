@@ -12,8 +12,14 @@
    how "one table, several views of it" reports are built.
 
    Reports are paginated and a table's row count is not known at compile time, so `h` is the height
-   you reserve for it on the page. #}
-{% macro table(source, columns, name=none, key=none, h=300, sort=[], description=none, style=none) %}
+   you reserve for it on the page.
+
+   `paginate=true` is Sigma's "Expand table rows": the table grows to hold every row when the report
+   renders and continues onto further pages (up to 10,000 rows, vertically only). Nothing is known at
+   compile time about how far it will grow, so a paginated table must be the last block on its page
+   (put what you want after it in the footer) and cannot sit in a `row` or `stack`; `h` is then the
+   height it starts with. #}
+{% macro table(source, columns, name=none, key=none, h=300, sort=[], description=none, style=none, paginate=false) %}
 {% set source = sigma_report.resolve_source(source, 'table') %}
 {% if not columns %}
   {% do sigma_report.fail('table', "columns is required - list the fields the table should show.") %}
@@ -35,6 +41,7 @@
   {% do el.update({"sort": sorts}) %}
 {% endif %}
 {% do sigma_report.apply_titles(el, name, description) %}
+{% do sigma_report.apply_flow(el, paginate) %}
 {% do el.update(sigma_report.compact({"style": sigma_report.card_style(style)})) %}
 {% do el.update({"_source": source}) %}
 {% do return(el) %}
@@ -47,8 +54,9 @@
                               values='Sum([Amount])', name='Revenue by region and segment')
 
    `rows` and `cols` are one field or a list of fields (each becomes a grouping level); `values` is
-   one measure or a list of them. Either `rows` or `cols` may be omitted. #}
-{% macro pivot_table(source, values, rows=none, cols=none, name=none, key=none, h=300, description=none, style=none) %}
+   one measure or a list of them. Either `rows` or `cols` may be omitted. `paginate=true` expands the
+   pivot to all its rows at render time, with the same rules as a paginated `table`. #}
+{% macro pivot_table(source, values, rows=none, cols=none, name=none, key=none, h=300, description=none, style=none, paginate=false) %}
 {% set source = sigma_report.resolve_source(source, 'pivot_table') %}
 {% if rows is none and cols is none %}
   {% do sigma_report.fail('pivot_table', "give at least one of `rows` or `cols`.") %}
@@ -72,6 +80,7 @@
   {% do el.update({"columnsBy": col_levels}) %}
 {% endif %}
 {% do sigma_report.apply_titles(el, name, description) %}
+{% do sigma_report.apply_flow(el, paginate) %}
 {% do el.update(sigma_report.compact({"style": sigma_report.card_style(style)})) %}
 {% do return(el) %}
 {% endmacro %}

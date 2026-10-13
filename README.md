@@ -123,7 +123,7 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 | --- | --- |
 | Report | `report`, `page`, `materialize` |
 | Layout | `row`, `stack`, `grid`, `section`, `report_header` |
-| Elements | `kpi`, `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `table`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image` |
+| Elements | `kpi`, `bar_chart`, `line_chart`, `area_chart`, `scatter_chart`, `pie_chart`, `donut_chart`, `table`, `pivot_table`, `text`, `title`, `heading`, `divider`, `image`, `page_number` |
 | Composites | `simple_dashboard`, `simple_leaderboard`, `kpi_row`, `kpi_from_spec`, `chart_from_spec`, `facts_line`, `bullet_list` |
 | Report presets | `simple_executive_summary`, `simple_period_review`, `simple_statement` |
 | Sources | `from_ref`, `from_source`, `from_data_model`, `warehouse_table`, `data_model`, `element` |
@@ -145,7 +145,7 @@ Everything is a macro under `sigma_report.`; every public macro is documented wi
 ) %}
 ```
 
-Both take `report_args={...}`: any argument of `report()` (`page_size`, `orientation`, `margin`, `header`, `footer`, `theme`, `description`, `folder_id`, `report_id`).
+Both take `report_args={...}`: any argument of `report()` (`page_size`, `orientation`, `margin`, `header`, `footer`, `page_numbers`, `theme`, `description`, `folder_id`, `report_id`).
 
 KPI mappings take `value`, `name`, `format`, `compare_to` (compare against a target measure), `timeline` + `period` (compare the latest period with the one before), `trend` (sparkline), `direction` (`higher` / `lower` / `none`), `description`. Chart mappings take a `type` of `bar`, `line`, `area`, `scatter`, `pie` or `donut` plus that chart macro's arguments (`x`, `y`, `color`, `sort_by`, `stacking`, `labels`, ...).
 
@@ -171,6 +171,18 @@ Whole documents from data alone, each a thin layer over the same public macros a
 ```
 
 Reports have no per-viewer filters, so `simple_statement` describes whatever its `source` holds: point it at a model already limited to one customer, and loop in dbt to make one per customer.
+
+### Paginated tables and page numbers
+
+A table's row count is not known when the report is compiled, so by default it gets a fixed height. For a listing or a statement that can run to any length, ask for Sigma's "Expand table rows":
+
+```sql
+sigma_report.table(source, ['order_id', 'order_date', 'amount'], name='Orders', h=300, paginate=true)
+```
+
+The table (or `pivot_table`) then grows to hold all its rows when the report renders and continues onto further pages (up to 10,000 rows, vertically only); `h` is the height it starts with. It is emitted as `flow="paginated"` on the element's layout entry. Since the package cannot know how far it will grow, the rules are strict, and compile-time errors say so: a paginated element must be the **last block on its page**, cannot sit in a `row`, `stack` or panel, and anything you want "after" it belongs in the footer. `simple_dashboard(table_paginate=true)` does this for its detail table, and `simple_statement` is built around it.
+
+`report(page_numbers=true)` puts a "1 of 3" page number at the right of the footer on every page; with a footer of your own, its elements share the footer row with the number. For full control add `sigma_report.page_number()` (or `page_number('Page {page}')`) to your own footer row.
 
 ### Building your own
 

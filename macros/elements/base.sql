@@ -50,6 +50,17 @@
 {% endmacro %}
 
 
+{# Marks a table or pivot table as paginated: Sigma's "Expand table rows", where the element grows to
+   hold all its rows at render time and continues onto further pages. It is a property of the element's
+   place in the layout (`flow="paginated"`), not of the element, so it is kept as a private key the
+   layout reads. `h` stays as the height reserved when the page is laid out. #}
+{% macro apply_flow(el, paginate) %}
+{% if paginate %}
+  {% do el.update({"_flow": "paginated"}) %}
+{% endif %}
+{% endmacro %}
+
+
 {# 'asc' / 'desc' (or the full words) -> Sigma's 'ascending' / 'descending'. #}
 {% macro direction(value, where) %}
 {% if value in ['asc', 'ascending'] %}

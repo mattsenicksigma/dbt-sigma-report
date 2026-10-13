@@ -49,3 +49,11 @@ assert_no_room_rejected | leave no room on a
 assert_preset_without_kpis_rejected | sigma_report.simple_executive_summary: kpis is required
 assert_statement_without_columns_rejected | sigma_report.simple_statement: columns is required
 assert_bad_facts_rejected | sigma_report.facts_line: facts is a list of [label, value] pairs
+
+assert_paginated_in_row_rejected | sigma_report.row: a paginated table spans the page width
+assert_paginated_in_stack_rejected | sigma_report.stack: a paginated table spans the page width
+assert_paginated_not_last_rejected | a paginated table must be the last block on its page
+assert_paginated_in_footer_rejected | a paginated table cannot sit in a footer panel
+assert_page_numbers_with_footer_row_rejected | sigma_report.report: page_numbers=true shares the footer row
+assert_bad_page_number_format_rejected | sigma_report.page_number: format must be a string using {page} and/or {total}
+assert_statement_footer_conflict_rejected | sigma_report.simple_statement: footer_note and report_args.footer both set

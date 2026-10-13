@@ -5,11 +5,13 @@ A real dbt project that uses the package (`packages.yml: local: ../`) against Du
 | Model | Exercises |
 | --- | --- |
 | `sigma_sales_simple` | the smallest `simple_dashboard`: one KPI, one chart |
-| `sigma_sales_dashboard` | a full `simple_dashboard`: three KPIs (one against a target), four chart kinds, a sorted detail table; paginates onto a second page |
+| `sigma_sales_dashboard` | a full `simple_dashboard`: three KPIs (one against a target), four chart kinds, a sorted, paginated (`table_paginate`) detail table; continues onto a second page |
 | `simple_leaderboard` | ranked horizontal bars per dimension |
 | `preset_executive_summary` | `simple_executive_summary`: three KPIs (one against plan), a headline chart, highlights |
 | `preset_period_review` | `simple_period_review`: period-over-period KPIs with sparklines, a trend, two breakdowns, notes |
-| `preset_statement` | `simple_statement`: facts, line items, a totals band, a footer note |
+| `preset_statement` | `simple_statement`: facts, a totals band, a paginated line-item table last on the page, a footer note with page numbers |
+| `sigma_paginated_tables` | `paginate=true` on a table and on a pivot (`flow="paginated"`, each last on its page) and `page_numbers=true` |
+| `sigma_footer_page_numbers` | `page_numbers=true` next to a footer of your own |
 | `sigma_sales_report` | the primitives: A4, header and footer panels, a `row` with a `stack`, pivot, calculated column, a chart built on a table, `extend`, `raw`, a per-report theme, two pages |
 | `sigma_sales_from_data_model` | a source that is a table of a Sigma data model (composed by `sigma_sales_model` with `sigma_data_models`) |
 | `sigma_orders_from_source` | a dbt source, the `screen` page size, and a project `relation_path` override |

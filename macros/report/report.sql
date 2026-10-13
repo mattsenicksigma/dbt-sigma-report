@@ -49,15 +49,36 @@
      header       elements / rows for the header panel, repeated on every page (none = no header)
      footer       elements / rows for the footer panel
      header_height, footer_height   panel heights in pixels
+     page_numbers true = a "{page} of {total}" page number at the right of the footer on every page.
+                  With a footer of your own, its blocks share the footer row with the number, so
+                  they must be elements (not rows); add `page_number()` to your own footer row
+                  otherwise.
 
    Header and footer space is subtracted from the content area, so panel content can never overlap
    page content.
 
    Everything is validated here, at parse time: an empty page, a duplicate page name, an element used
    twice, or content that does not fit its page fails `dbt parse` rather than reaching Sigma. #}
-{% macro report(name, pages, theme={}, folder_id=none, report_id=none, description=none, page_size='letter', orientation=none, margin=48, gap=16, header=none, footer=none, header_height=48, footer_height=32) %}
+{% macro report(name, pages, theme={}, folder_id=none, report_id=none, description=none, page_size='letter', orientation=none, margin=48, gap=16, header=none, footer=none, header_height=48, footer_height=32, page_numbers=false) %}
 {% if not pages %}
   {% do sigma_report.fail('report', "pages must not be empty.") %}
+{% endif %}
+{% if page_numbers %}
+  {% if footer %}
+    {% set footer_items = sigma_report.flatten(footer) %}
+    {% set footer_weights = [] %}
+    {% for item in footer_items %}
+      {% if '_row' in item or '_stack' in item %}
+        {% do sigma_report.fail('report', "page_numbers=true shares the footer row with your footer, so the footer must be elements, not rows - add sigma_report.page_number() to your own footer row instead.") %}
+      {% endif %}
+      {% do footer_weights.append(4) %}
+    {% endfor %}
+    {% do footer_items.append(sigma_report.page_number()) %}
+    {% do footer_weights.append(1) %}
+    {% set footer = [sigma_report.row(footer_items, widths=footer_weights)] %}
+  {% else %}
+    {% set footer = [sigma_report.row([sigma_report.page_number()], widths=[1], lead=5)] %}
+  {% endif %}
 {% endif %}
 {% set dims = sigma_report.page_dimensions(page_size, orientation) %}
 {% set content_w = dims['width'] - 2 * margin %}
