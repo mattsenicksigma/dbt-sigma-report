@@ -74,6 +74,10 @@
 {% if '[' in text or '(' in text %}
   {% do return(text) %}
 {% endif %}
+{# a number literal ('0', '100', '0.5') is a formula, not a column called "0" #}
+{% if text.replace('.', '', 1).replace('-', '', 1).isdigit() %}
+  {% do return(text) %}
+{% endif %}
 {% set column = sigma_report.titleize(text) if text == text | lower else text %}
 {% do return(sigma_report.reference_to(column, source)) %}
 {% endmacro %}

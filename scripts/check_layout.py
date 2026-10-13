@@ -7,7 +7,8 @@ A report is a paginated document, so a mistake in the layout is a clipped or ove
 cannot be caught by looking at the JSON. This parses `contents.layout` and checks, per `<Page>`:
 
   * every element sits inside the content area (page size minus margin, minus the header / footer panels);
-  * no two elements overlap;
+  * no two elements overlap (except elements pinned with `at(..., overlap=true)`, listed in the spec's
+    `_overlap_ok`);
 
 and, per `<Panel>`, that its elements fit the panel's width and height. Exit status is non-zero on any
 violation, so it can gate CI.
@@ -25,6 +26,7 @@ def violations(name, spec):
     config = contents["config"]
     margin, width, height = config["margin"], config["pageWidth"], config["pageHeight"]
     panels = {p["id"]: p for p in contents.get("panels", [])}
+    overlap_ok = set(spec.get("_overlap_ok", []))
     panel_space = sum(p["config"]["height"] for p in panels.values())
     content_w = width - 2 * margin
     content_h = height - 2 * margin - panel_space
@@ -50,6 +52,8 @@ def violations(name, spec):
                 problems.append("%s: %s: %s ends at (%g, %g) outside the %gx%g area" % (name, label, element_id, x + w, y + h, limit_w, limit_h))
         for i, a in enumerate(boxes):
             for b in boxes[i + 1:]:
+                if a[0] in overlap_ok or b[0] in overlap_ok:  # pinned with at(..., overlap=true)
+                    continue
                 if a[1] < b[1] + b[3] and b[1] < a[1] + a[3] and a[2] < b[2] + b[4] and b[2] < a[2] + a[4]:
                     problems.append("%s: %s: %s overlaps %s" % (name, label, a[0], b[0]))
     return problems

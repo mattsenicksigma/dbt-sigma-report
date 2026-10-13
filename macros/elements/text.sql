@@ -17,14 +17,14 @@
 
 
 {# The paragraphs of a markdown body with the font size each is drawn at, for estimating height:
-   `# ` / `## ` / `### ` headings are 36 / 28 / 22px; everything else is 14px. Blank lines separate
-   paragraphs. #}
+   `# ` / `## ` / `### ` headings use the `h1_size` / `h2_size` / `h3_size` settings (36 / 28 / 22px) and
+   everything else `body_size` (14px). Blank lines separate paragraphs. #}
 {% macro text_parts(body) %}
 {% set parts = [] %}
 {% for line in body.split('\n') %}
   {% set stripped = line.strip() %}
   {% if stripped %}
-    {% set size = 36 if stripped.startswith('# ') else (28 if stripped.startswith('## ') else (22 if stripped.startswith('### ') else 14)) %}
+    {% set size = sigma_report.setting('h1_size') if stripped.startswith('# ') else (sigma_report.setting('h2_size') if stripped.startswith('## ') else (sigma_report.setting('h3_size') if stripped.startswith('### ') else sigma_report.setting('body_size'))) %}
     {% do parts.append({"text": sigma_report.visible_text(stripped.lstrip('#').strip()), "size": size}) %}
   {% endif %}
 {% endfor %}
@@ -33,17 +33,20 @@
 
 
 {# How tall `parts` need to be when drawn `width` pixels wide: characters per line from the font size
-   (a character is about 0.55 em wide), lines per paragraph, 1.35 line height, a little padding. An
-   estimate, deliberately a bit generous - clipped text is worse than a little white space. #}
+   (a character is about `char_width` em wide), lines per paragraph, `line_height` times the font size per
+   line, `text_padding` around. An estimate, deliberately a bit generous - clipped text is worse than a
+   little white space. All three are project settings, so a theme with a wider font can recalibrate. #}
 {% macro text_height(parts, width) %}
-{% set pad = 6 %}
+{% set pad = sigma_report.setting('text_padding') %}
+{% set char_w = sigma_report.setting('char_width') %}
+{% set line_h = sigma_report.setting('line_height') %}
 {% set avail = [width - 2 * pad, 40] | max %}
 {% set total = namespace(h=2 * pad + 6 * ((parts | length) - 1)) %}
 {% for part in parts %}
-  {% set per_line = [(avail / (part['size'] * 0.55)) | int, 1] | max %}
+  {% set per_line = [(avail / (part['size'] * char_w)) | int, 1] | max %}
   {% set chars = [part['text'] | length, 1] | max %}
   {% set lines = ((chars + per_line - 1) / per_line) | int %}
-  {% set total.h = total.h + ((lines * part['size'] * 1.35) + 0.999) | int %}
+  {% set total.h = total.h + ((lines * part['size'] * line_h) + 0.999) | int %}
 {% endfor %}
 {% do return(total.h | int) %}
 {% endmacro %}
@@ -64,15 +67,17 @@
 {% endmacro %}
 
 
-{# A report title: bold 28px text with an optional muted 14px subtitle. (A markdown `# ` heading is far
-   larger in Sigma's default theme and clips a long title in a fixed box.) Sized from its content, so a
-   long title wraps onto a second line and the rest of the page moves down; pass `h=` to fix it. #}
+{# A report title: bold text (`title_size`, 28px) with an optional muted subtitle (`body_size`). (A
+   markdown `# ` heading is far larger in Sigma's default theme and clips a long title in a fixed box.)
+   Sized from its content, so a long title wraps onto a second line and the rest of the page moves
+   down; pass `h=` to fix it. #}
 {% macro title(text, subtitle=none, key=none, h=none) %}
-{% set body = '<span style="font-size: 28px">**' ~ text ~ '**</span>' %}
-{% set parts = [{"text": text, "size": 28}] %}
+{% set size = sigma_report.setting('title_size') %}
+{% set body = '<span style="font-size: ' ~ size ~ 'px">**' ~ text ~ '**</span>' %}
+{% set parts = [{"text": text, "size": size}] %}
 {% if subtitle %}
   {% set body = body ~ '\n\n<span style="color: ' ~ sigma_report.color_ref('muted') ~ '">' ~ subtitle ~ '</span>' %}
-  {% do parts.append({"text": subtitle, "size": 14}) %}
+  {% do parts.append({"text": subtitle, "size": sigma_report.setting('body_size')}) %}
 {% endif %}
 {% set el = sigma_report.new_element('text', 'title', key or ('title:' ~ text), none, h if h is not none else 1) %}
 {% do el.update({"body": body, "verticalAlign": "center"}) %}
@@ -83,20 +88,22 @@
 {% endmacro %}
 
 
-{# A section heading, one step below `title`: bold 20px. Sized from its content like `title`. #}
+{# A section heading, one step below `title`: bold `heading_size` (20px). Sized from its content like
+   `title`. #}
 {% macro heading(text, key=none, h=none) %}
+{% set size = sigma_report.setting('heading_size') %}
 {% set el = sigma_report.new_element('text', 'heading', key or ('heading:' ~ text), none, h if h is not none else 1) %}
-{% do el.update({"body": '<span style="font-size: 20px">**' ~ text ~ '**</span>', "verticalAlign": "center"}) %}
+{% do el.update({"body": '<span style="font-size: ' ~ size ~ 'px">**' ~ text ~ '**</span>', "verticalAlign": "center"}) %}
 {% if h is none %}
-  {% do el.update({"_auto": [{"text": text, "size": 20}]}) %}
+  {% do el.update({"_auto": [{"text": text, "size": size}]}) %}
 {% endif %}
 {% do return(el) %}
 {% endmacro %}
 
 
 {# A rule between sections. Give repeated dividers distinct keys. #}
-{% macro divider(key='divider', direction='horizontal', h=12) %}
-{% set el = sigma_report.new_element('divider', 'divider', key, none, h) %}
+{% macro divider(key='divider', direction='horizontal', h=none) %}
+{% set el = sigma_report.new_element('divider', 'divider', key, none, sigma_report.setting('divider_h', h)) %}
 {% do el.update({
   "direction": direction,
   "style": {"color": sigma_report.color_ref('hairline'), "width": 1, "strokeStyle": "solid"},
@@ -106,8 +113,8 @@
 
 
 {# An image from a URL (a logo, say). `fit` is Sigma's `contain` / `cover` / `scale-down` / `stretch`. #}
-{% macro image(url, key=none, alt=none, h=64, fit='contain') %}
-{% set el = sigma_report.new_element('image', 'image', key, url, h) %}
+{% macro image(url, key=none, alt=none, h=none, fit='contain') %}
+{% set el = sigma_report.new_element('image', 'image', key, url, sigma_report.setting('image_h', h)) %}
 {% do el.update({"source": {"kind": "url", "url": url}, "style": {"fit": fit}}) %}
 {% if alt is not none %}
   {% do el.update({"alt": alt}) %}
