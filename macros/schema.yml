@@ -389,8 +389,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: format
         type: any
         description: "A `sigma_report.format_*()` result applied to the value."
@@ -440,8 +440,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -488,8 +488,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -530,8 +530,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -578,8 +578,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -608,8 +608,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -644,8 +644,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -659,7 +659,7 @@ macros:
         type: any
         description: "Overrides the default card look (a Sigma `style` mapping)."
   - name: table
-    description: "A table element. `h` is the height reserved for it on the page, since row counts are unknown at compile time."
+    description: "A table element. Sigma tables do not paginate: they show the first `rows` rows of the sort order, so `rows` (or `h`) sets the height."
     arguments:
       - name: source
         type: any
@@ -673,9 +673,12 @@ macros:
       - name: key
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
-      - name: h
+      - name: rows
         type: int
-        description: "Height in pixels."
+        description: "Data rows shown (default 10). Sigma tables do not paginate: they show as many rows as their height allows, so this sets the height."
+      - name: h
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page. Overrides `rows`."
       - name: sort
         type: list[any]
         description: "Sort items: a field, or a (field, 'asc'|'desc') pair."
@@ -685,6 +688,15 @@ macros:
       - name: style
         type: any
         description: "Overrides the default card look (a Sigma `style` mapping)."
+  - name: table_height
+    description: "The height of a table showing a given number of rows, measured from Sigma's PDF export."
+    arguments:
+      - name: rows
+        type: int
+        description: "Visible data rows."
+      - name: titled
+        type: bool
+        description: "Whether the table has a title bar."
   - name: pivot_table
     description: "A pivot table: `rows` and `cols` are the grouping levels, `values` the measures."
     arguments:
@@ -707,8 +719,8 @@ macros:
         type: string
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: description
         type: string
         description: "Description text."
@@ -725,8 +737,8 @@ macros:
         type: string
         description: "Identity for the id; defaults to the body."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, `fill`, or none to size from the content and the width."
       - name: align
         type: string
         description: "Vertical alignment: `top`, `center` or `bottom`."
@@ -743,8 +755,8 @@ macros:
         type: string
         description: "Identity for the id; defaults to the text."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or none to size from the content and the width."
   - name: heading
     description: "A section heading."
     arguments:
@@ -755,8 +767,8 @@ macros:
         type: string
         description: "Identity for the id; defaults to the text."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or none to size from the content and the width."
   - name: divider
     description: "A rule between sections. Give repeated dividers distinct keys."
     arguments:
@@ -767,8 +779,8 @@ macros:
         type: string
         description: "`horizontal` or `vertical`."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
   - name: image
     description: "An image from a URL, such as a logo."
     arguments:
@@ -782,8 +794,8 @@ macros:
         type: string
         description: "Alternative text."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
       - name: fit
         type: string
         description: "`contain`, `cover`, `scale-down` or `stretch`."
@@ -809,8 +821,8 @@ macros:
         type: dict[string,any]
         description: "Sigma's own fields, used as written."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
   - name: new_element
     description: "The scaffolding every element macro starts from: a stable id and a pixel height. For writing your own element macros."
     arguments:
@@ -827,8 +839,8 @@ macros:
         type: string
         description: "Used for the id when `key` is none."
       - name: h
-        type: int
-        description: "Height in pixels."
+        type: any
+        description: "Height in pixels, or `fill` for the rest of the page (directly on a page only). Text, titles and headings default to none: sized from their content."
   - name: card_style
     description: "The default card look of a data element (white surface, hairline border), or the `style` passed in. `none` when the theme has `cards: false`."
     arguments:
@@ -939,9 +951,12 @@ macros:
       - name: table_name
         type: string
         description: "The table's display name in the data model, if it was given a custom `display_name`."
-      - name: table_h
+      - name: table_rows
         type: int
-        description: "Height reserved for the detail table, in pixels."
+        description: "Rows shown in the detail table (sets its height)."
+      - name: table_h
+        type: any
+        description: "Pixel height or `fill` for the detail table; overrides `table_rows`."
       - name: table_sort
         type: list[any]
         description: "Sort for the detail table: fields or (field, 'asc'|'desc') pairs."

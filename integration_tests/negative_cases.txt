@@ -44,4 +44,9 @@ assert_duplicate_page_names_rejected | sigma_report.report: duplicate page name 
 assert_duplicate_element_rejected | resolve to the same element id
 assert_page_overflow_rejected | content overflows the page by
 assert_block_taller_than_page_rejected | a block is 5000px tall
+assert_fill_in_row_rejected | sigma_report.row: h='fill' only works on an element placed directly on a page
+assert_fill_in_stack_rejected | sigma_report.stack: h='fill' only works on an element placed directly on a page
+assert_bad_height_word_rejected | sigma_report.divider: h must be a positive number of pixels, or 'fill'
+assert_zero_table_rows_rejected | sigma_report.table: rows must be a positive number of visible rows
+assert_fill_without_room_rejected | content overflows the page by
 assert_no_room_rejected | leave no room on a

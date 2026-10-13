@@ -19,7 +19,8 @@
          hue: Emerald                 # swap the accent scale
          colors: {primary: "#0b6e4f"} # ...or pin one token to your brand color
          categorical: ["#0b6e4f", "#f2a900", "#3d5a80"]   # series palette for multi-color charts
-         fonts: {text: Inter, data: Inter}                #}
+         fonts: {text: Inter, data: Inter}
+         page_background: surface    # a token or hex; white by default, since reports are printed (`canvas` is the app gray) #}
 
 
 {# Neutral scales, ordered [canvas, ink, body, muted, hairline, fill, series_grey]. #}
@@ -62,6 +63,7 @@
   "fonts": {"text": "Inter", "data": "Inter"},
   "border_radius": "round",
   "cards": true,
+  "page_background": "surface",
 }) %}
 {% endmacro %}
 
@@ -178,7 +180,7 @@
     "danger": c['danger'],
   },
   "categoricalScheme": t['categorical'],
-  "colorOverrides": [{"name": "backgroundCanvas", "color": c['canvas']}],
+  "colorOverrides": [{"name": "backgroundCanvas", "color": sigma_report.color(t['page_background'], override)}],
   "borderRadius": t['border_radius'],
 } %}
 {% if t['sequential'] %}

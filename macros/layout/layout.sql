@@ -46,6 +46,9 @@
   {% if item is not mapping or ('id' not in item and '_stack' not in item) %}
     {% do sigma_report.fail('row', "a row holds elements built by sigma_report macros (or stack(...)s), got " ~ item) %}
   {% endif %}
+  {% if item.get('_fill') %}
+    {% do sigma_report.fail('row', "h='fill' only works on an element placed directly on a page, not inside a row.") %}
+  {% endif %}
   {% if weights[loop.index0] is not number or weights[loop.index0] <= 0 %}
     {% do sigma_report.fail('row', "widths must be positive numbers, got " ~ weights[loop.index0]) %}
   {% endif %}
@@ -70,6 +73,9 @@
 {% for item in items %}
   {% if item is not mapping or 'id' not in item %}
     {% do sigma_report.fail('stack', "a stack holds elements built by sigma_report macros, got " ~ item) %}
+  {% endif %}
+  {% if item.get('_fill') %}
+    {% do sigma_report.fail('stack', "h='fill' only works on an element placed directly on a page, not inside a stack.") %}
   {% endif %}
   {% set total.h = total.h + item['_h'] %}
 {% endfor %}
@@ -114,6 +120,61 @@
 {% endmacro %}
 
 
+{# The pixel width of each cell of a row, in order. Widths are whole pixels; the last cell absorbs the
+   rounding so a row without `pad` spans the content width exactly. #}
+{% macro row_cell_widths(block, content_w, gap) %}
+{% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
+{% set pad = block['_pad'] %}
+{% set n = (block['_row'] | length) + (1 if pad > 0 else 0) %}
+{% set usable = content_w - row_gap * (n - 1) %}
+{% set total = namespace(weight=pad) %}
+{% for w in block['_widths'] %}{% set total.weight = total.weight + w %}{% endfor %}
+{% set cursor = namespace(x=0) %}
+{% set widths = [] %}
+{% for el in block['_row'] %}
+  {% if loop.last and pad <= 0 %}
+    {% set width = content_w - cursor.x %}
+  {% else %}
+    {% set width = (usable * block['_widths'][loop.index0] / total.weight) | int %}
+  {% endif %}
+  {% do widths.append(width) %}
+  {% set cursor.x = cursor.x + width + row_gap %}
+{% endfor %}
+{% do return(widths) %}
+{% endmacro %}
+
+
+{# Settles the heights that depend on width: text sized from its content (`_auto`). Elements are updated
+   in place; a row becomes as tall as its tallest cell and a stack as tall as its elements plus gaps. This
+   is why heights are resolved here, in the flow, rather than when the element is built - at build time
+   nobody knows how wide the cell will be. #}
+{% macro resolve_block(block, content_w, gap) %}
+{% if '_row' in block %}
+  {% set widths = sigma_report.row_cell_widths(block, content_w, gap) %}
+  {% set tallest = namespace(h=0) %}
+  {% for el in block['_row'] %}
+    {% set cell_w = widths[loop.index0] %}
+    {% if '_stack' in el %}
+      {% set total = namespace(h=el['_gap'] * ((el['_stack'] | length) - 1)) %}
+      {% for inner in el['_stack'] %}
+        {% if inner.get('_auto') %}
+          {% do inner.update({"_h": sigma_report.text_height(inner['_auto'], cell_w)}) %}
+        {% endif %}
+        {% set total.h = total.h + inner['_h'] %}
+      {% endfor %}
+      {% do el.update({"_h": total.h}) %}
+    {% elif el.get('_auto') %}
+      {% do el.update({"_h": sigma_report.text_height(el['_auto'], cell_w)}) %}
+    {% endif %}
+    {% if el['_h'] > tallest.h %}{% set tallest.h = el['_h'] %}{% endif %}
+  {% endfor %}
+  {% do block.update({"_h": tallest.h}) %}
+{% elif block.get('_auto') %}
+  {% do block.update({"_h": sigma_report.text_height(block['_auto'], content_w)}) %}
+{% endif %}
+{% endmacro %}
+
+
 {# Places one block (an element or a row) at vertical offset `y`. A page's blocks are elements and
    rows; a row's cells are elements and stacks. Returns a list of placements:
    {element, x, y, width, height}. Widths are whole pixels; the last element in a row absorbs the
@@ -122,18 +183,10 @@
 {% set placed = [] %}
 {% if '_row' in block %}
   {% set row_gap = block['_gap'] if block['_gap'] is not none else gap %}
-  {% set pad = block['_pad'] %}
-  {% set n = (block['_row'] | length) + (1 if pad > 0 else 0) %}
-  {% set usable = content_w - row_gap * (n - 1) %}
-  {% set total = namespace(weight=pad) %}
-  {% for w in block['_widths'] %}{% set total.weight = total.weight + w %}{% endfor %}
+  {% set widths = sigma_report.row_cell_widths(block, content_w, gap) %}
   {% set cursor = namespace(x=0) %}
   {% for el in block['_row'] %}
-    {% if loop.last and pad <= 0 %}
-      {% set width = content_w - cursor.x %}
-    {% else %}
-      {% set width = (usable * block['_widths'][loop.index0] / total.weight) | int %}
-    {% endif %}
+    {% set width = widths[loop.index0] %}
     {% if '_stack' in el %}
       {# a stack's elements keep their heights and sit one under another in the cell #}
       {% set top = namespace(y=y) %}
@@ -166,7 +219,10 @@
   {% if block is not mapping or ('id' not in block and '_row' not in block) %}
     {% do sigma_report.fail(where, "blocks are elements or rows; a stack(...) belongs inside a row(...), got " ~ block) %}
   {% endif %}
-  {% set h = block['_h'] %}
+  {% do sigma_report.resolve_block(block, content_w, gap) %}
+  {# an h='fill' element needs at least `_fill_min` pixels; it then takes everything below it #}
+  {% set fill = block.get('_fill') %}
+  {% set h = block['_fill_min'] if fill else block['_h'] %}
   {% if h > content_h %}
     {% do sigma_report.fail(where, "a block is " ~ h ~ "px tall but the page's content area is only " ~ content_h ~ "px. Lower its `h=`, or use a larger page_size / smaller margin.") %}
   {% endif %}
@@ -180,6 +236,10 @@
     {% set state.y = 0 %}
   {% endif %}
   {% set top = state.y + (gap if state.current else 0) %}
+  {% if fill %}
+    {% do block.update({"_h": content_h - top}) %}
+    {% set h = content_h - top %}
+  {% endif %}
   {% for p in sigma_report.place_block(block, top, content_w, gap) %}
     {% do state.current.append(p) %}
   {% endfor %}

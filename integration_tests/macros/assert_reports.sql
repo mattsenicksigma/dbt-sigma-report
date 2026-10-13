@@ -75,6 +75,17 @@
 {% endmacro %}
 
 
+{# The text element whose body contains `snippet` (text elements have no name to match on). #}
+{% macro _find_text(elements, snippet) %}
+{% for el in elements %}
+  {% if el.kind == 'text' and snippet in el.body %}
+    {% do return(el) %}
+  {% endif %}
+{% endfor %}
+{% do exceptions.raise_compiler_error('ASSERTION FAILED: no text containing ' ~ snippet) %}
+{% endmacro %}
+
+
 {% macro _count(elements, kind) %}
 {% set n = namespace(count=0) %}
 {% for el in elements %}{% if el.kind == kind %}{% set n.count = n.count + 1 %}{% endif %}{% endfor %}
@@ -213,6 +224,35 @@
 {% endmacro %}
 
 
+{# The `height="N"` (or `y`, `width`) the layout gives an element. #}
+{% macro _box(layout, element_id, attribute) %}
+{% set segment = layout.split('elementId="' ~ element_id ~ '"')[1].split('/>')[0] %}
+{% do return(segment.split(' ' ~ attribute ~ '="')[1].split('"')[0] | int) %}
+{% endmacro %}
+
+
+{% macro _check_long_form() %}
+{% set t = sigma_report_integration_tests %}
+{% set c = t._spec_of('sigma_sales_long_form').contents %}
+{% set title = t._find(c.elements, 'text', none) %}
+{% do t._ok('Quarterly sales performance review' in title.body and 'font-size: 28px' in title.body, 'sigma_sales_long_form: titles are 28px bold spans, not markdown H1s') %}
+{# a title that wraps takes more room than one that does not: sized from its content, not a fixed 64px #}
+{% do t._ok(t._box(c.layout, title.id, 'height') >= 150, 'sigma_sales_long_form: a long title and its subtitle get the height they need (' ~ t._box(c.layout, title.id, 'height') ~ 'px)') %}
+{# the same text in a narrow cell is taller than in a wide one, and the row stretches its neighbour to match #}
+{% set narrow = t._find_text(c.elements, 'Revenue is summed') %}
+{% set wide = t._find_text(c.elements, 'Short note.') %}
+{% set kpi = t._find(c.elements, 'kpi-chart', 'Revenue') %}
+{% do t._ok(t._box(c.layout, narrow.id, 'height') > 100 and t._box(c.layout, wide.id, 'height') < 40, 'sigma_sales_long_form: text height follows the width it is laid out at') %}
+{% do t._ok(t._box(c.layout, kpi.id, 'height') == t._box(c.layout, narrow.id, 'height'), 'sigma_sales_long_form: a row is as tall as its tallest cell') %}
+{# a table is a window of `rows` rows: 130px of chrome (title, header, summary bar) + 20px a row, and `fill` takes the rest of the page #}
+{% set top = t._find(c.elements, 'table', 'Top orders') %}
+{% do t._ok(t._box(c.layout, top.id, 'height') == 230, 'sigma_sales_long_form: rows=5 gives a 230px table') %}
+{% set all = t._find(c.elements, 'table', 'All orders') %}
+{% do t._ok(t._box(c.layout, all.id, 'y') + t._box(c.layout, all.id, 'height') == 960, 'sigma_sales_long_form: h=fill runs to the bottom of the content area') %}
+{% do t._ok(c.pages | map(attribute='name') | list == ['Overview', 'Full list'], 'sigma_sales_long_form: both pages, nothing spilled') %}
+{% endmacro %}
+
+
 {% macro _check_leaderboard() %}
 {% set t = sigma_report_integration_tests %}
 {% set c = t._spec_of('simple_leaderboard').contents %}
@@ -238,12 +278,13 @@
 
 {% macro assert_reports() %}
 {% set t = sigma_report_integration_tests %}
-{% for name in ['sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source'] %}
+{% for name in ['sigma_sales_long_form', 'sigma_sales_simple', 'sigma_sales_dashboard', 'simple_leaderboard', 'sigma_sales_report', 'sigma_sales_from_data_model', 'sigma_orders_from_source'] %}
   {% do t._check_report(name) %}
 {% endfor %}
 {% do t._check_simple() %}
 {% do t._check_dashboard() %}
 {% do t._check_manual() %}
+{% do t._check_long_form() %}
 {% do t._check_leaderboard() %}
 {% do t._check_sources() %}
 {{ log('all assertions passed', info=True) }}

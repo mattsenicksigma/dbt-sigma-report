@@ -64,6 +64,14 @@
 {% macro assert_block_taller_than_page_rejected() %}
 {% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a', h=5000)], paginate=true)]) %}
 {% endmacro %}
+{# ---- heights ---- #}
+{% macro assert_fill_in_row_rejected() %}{% do sigma_report.row([sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='n', h='fill')]) %}{% endmacro %}
+{% macro assert_fill_in_stack_rejected() %}{% do sigma_report.stack([sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='n', h='fill')]) %}{% endmacro %}
+{% macro assert_bad_height_word_rejected() %}{% do sigma_report.divider('d', h='tall') %}{% endmacro %}
+{% macro assert_zero_table_rows_rejected() %}{% do sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='n', rows=0) %}{% endmacro %}
+{% macro assert_fill_without_room_rejected() %}
+{% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a', h=900), sigma_report.table(sigma_report_integration_tests._src(), ['a'], name='n', h='fill')])]) %}
+{% endmacro %}
 {% macro assert_no_room_rejected() %}
 {% do sigma_report.report('r', [sigma_report.page('p', [sigma_report.divider('a')])], margin=600) %}
 {% endmacro %}

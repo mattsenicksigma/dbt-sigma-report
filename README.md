@@ -112,7 +112,8 @@ A report has **pages**. A page is a vertical stack of **blocks**, and a block is
 - `grid(elements, per_row=2)` turns a list of elements into rows.
 - Content that does not fit a page **fails the build** with the overflow in pixels, so a clipped page can never ship silently. Add `paginate=true` to a `page()` and it continues on a new physical page instead (`Detail`, `Detail (2)`, ...), repeating the header and footer.
 - Header and footer heights are subtracted from the content area, so panel content can never overlap page content.
-- A table's row count is unknown at compile time, so you choose the height you reserve for it (`h=`). Size it to what fits the page, or use `paginate=true`.
+- **Heights come from content where the compiler can know them.** Titles, headings and text are sized from their characters and the width of the cell they land in (a long title wraps and the page flows down; the same paragraph in a narrow cell gets taller), so they never clip. Pass `h=` in pixels to pin one.
+- **A Sigma table does not paginate.** It is a window onto the first rows of its sort order, as many as its height shows, with the total row count in a summary bar. So `table(..., rows=10)` is "show 10 rows" (the height follows: about 130px of title, header and summary bar plus 20px a row), and `sort=` chooses which ones. `h='fill'` gives a table everything left on its page, for a full-page list as the last block. `fill` only works on an element placed directly on a page, not in a row or stack.
 - Pixel positions are validated in CI: nothing outside its page, nothing overlapping (`scripts/check_layout.py`, which you can run on your own manifest too).
 
 ## Components
@@ -205,6 +206,7 @@ vars:
     fonts: {text: Inter, data: Inter}
     border_radius: round               # square | round | pill
     cards: true                        # false = no card border around data elements
+    page_background: surface           # a token or hex; white by default (reports are printed)
 ```
 
 | Key | Choices |
@@ -253,13 +255,13 @@ bash scripts/run_integration_tests_duckdb.sh   # the whole suite; DuckDB, no cre
 python -m unittest discover -s scripts -p "test_*.py"
 ```
 
-The integration suite is a real dbt project ([`integration_tests/`](integration_tests)) that compiles six reports from a seed, then:
+The integration suite is a real dbt project ([`integration_tests/`](integration_tests)) that compiles seven reports from a seed, then:
 
 1. asserts the shape of every compiled report (field names, cross-references, theme flow, ids from vars);
 2. checks pixel geometry from the layout XML (inside the page, nothing overlapping);
 3. compares each report with a committed golden JSON file (output is deterministic: every id is a hash of a stable path);
 4. validates each against Sigma's request schema, extracted from the public OpenAPI document;
-5. runs 36 inputs that must fail `dbt parse`, each with the exact error it must raise;
+5. runs 41 inputs that must fail `dbt parse`, each with the exact error it must raise;
 6. re-runs the assertions with different Sigma ids to prove every id flows from the vars.
 
 CI (`.github/workflows/integration-tests.yml`) runs all of it on dbt 1.x and dbt 2.x.
@@ -268,11 +270,12 @@ CI (`.github/workflows/integration-tests.yml`) runs all of it on dbt 1.x and dbt
 
 An initial version aimed at dashboards.
 
-- **Validated against Sigma's schema, not rendered in CI.** The request schema check, the geometry check and the golden files run in CI. CI has no Sigma credentials, so how a report *looks* in Sigma, and whether Sigma accepts the formulas against your data, is checked by `--push --dry-run` against your own organization. Panel sizing in particular is an assumption: header and footer heights are subtracted from the content area, which is safe (no overlap) but may leave more white space than Sigma needs.
+- **Validated against Sigma's schema, not rendered in CI.** The request schema check, the geometry check and the golden files run in CI. CI has no Sigma credentials, so how a report *looks* in Sigma, and whether Sigma accepts the formulas against your data, is checked by `--push --dry-run` against your own organization. To *see* a report, push it and export it: `POST /v2/reports/{id}/export` returns a PDF. Panel sizing is an assumption: header and footer heights are subtracted from the content area, which is safe (no overlap) but may leave more white space than Sigma needs.
 - **Modeled elements**: KPI, bar / line / area / scatter / pie / donut charts, table, pivot table, text, divider, image. Not modeled (use [`raw`](#escape-hatches)): combo, waterfall, funnel, gauge, sankey, treemap and box charts, maps, input tables, buttons, embeds, repeated containers, conditional formatting, reference marks, trellis.
 - **No controls.** Reports have no interactive controls in Sigma's code representation.
 - **Layout is a vertical flow** of rows and stacks. There is no free x/y placement and no nesting of rows inside stacks beyond one level; `raw` elements still sit in the same flow.
-- **Heights are yours to choose.** Table and text height depend on data and content that the compiler cannot see.
+- **Text height is an estimate.** It is computed from character counts and font size (generously, so text is not clipped); unusual fonts, very long unbroken words or `{{formula}}` segments can differ. Pin `h=` when it matters. The table row height (20px) and chrome (130px) were measured from a Sigma PDF export, not documented by Sigma, so they could shift.
+- **No true multi-page tables.** Sigma's code representation has no pagination or row-limit setting for tables, so a table shows its first N rows (see [Layout](#layout)), never "all rows over several pages".
 - **Source paths** use `target.database` / `target.schema` unless overridden (see [Sources](#sources)).
 - **Formulas are strings.** The package cannot check them against your data; the dry run does.
 - One `sigma_report` per model; other `meta` keys are lost to `materialize()`.

@@ -14,7 +14,7 @@
     timeline='order_date', period='month', trend=true) %}
 
 {% set by_region = sigma_report.extend(
-    sigma_report.bar_chart(orders, 'region', 'Sum([Amount])', name='Revenue by region', horizontal=true, labels=true, h=200),
+    sigma_report.bar_chart(orders, 'region', 'Sum([Amount])', name='Revenue by region', horizontal=true, labels=true, h=180),
     {'gap': {'width': 'small'}}) %}
 {% set by_month = sigma_report.line_chart(orders, 'DateTrunc("month", [Order Date])', 'Sum([Amount])',
     color='segment', name='Revenue by month') %}
