@@ -17,6 +17,7 @@
     ],
     table_columns=['order_id', 'order_date', 'region', 'segment', 'amount'],
     table_sort=[('order_date', 'desc')],
+    table_paginate=true,
     report_args={'description': 'Compiled by dbt-sigma-report'},
 ) %}
 

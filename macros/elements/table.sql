@@ -17,14 +17,24 @@
    pixels to fix the height, or `h='fill'` to take whatever is left of the page below it (it must sit
    directly on a page, not in a row). Sort the table to choose which rows appear.
 
+   `paginate=true` is Sigma's "Expand table rows": the table grows to hold every row when the report
+   renders and continues onto further pages (up to 10,000 rows, vertically only), so no row count is
+   needed. The cost is that nothing is known at compile time about how far it will grow, so a paginated
+   table must be the last block on its page (put what you want after it in the footer) and cannot sit in
+   a `row`, `stack` or panel; `h` (or `rows`) is the height it starts with. Use `window` / `table_pages`
+   instead when you want fixed page boundaries, content after the table, or a deterministic page count.
+
    `window=[first, last]` shows only rows `first` to `last` of the sort order (1-based, inclusive): the
    table gets a hidden `RowNumber()` column and a number-range filter on it, and `rows` defaults to the
    window's size. Stacking several windows is how a table runs over several pages - see `table_pages`.
    Windows need a deterministic `sort`, or the row numbers are arbitrary. #}
-{% macro table(source, columns, name=none, key=none, rows=none, h=none, sort=[], window=none, description=none, style=none) %}
+{% macro table(source, columns, name=none, key=none, rows=none, h=none, sort=[], window=none, description=none, style=none, paginate=false) %}
 {% set source = sigma_report.resolve_source(source, 'table') %}
 {% if not columns %}
   {% do sigma_report.fail('table', "columns is required - list the fields the table should show.") %}
+{% endif %}
+{% if window is not none and paginate %}
+  {% do sigma_report.fail('table', "paginate=true expands the table to all its rows, so it cannot also be a window.") %}
 {% endif %}
 {% if window is not none %}
   {% if window | length != 2 or window[0] is not number or window[1] is not number or window[0] < 1 or window[1] < window[0] %}
@@ -62,6 +72,7 @@
 {% do sigma_report.apply_titles(el, name, description) %}
 {% do el.update(sigma_report.compact({"style": sigma_report.card_style(style)})) %}
 {% do el.update({"_source": source}) %}
+{% do sigma_report.apply_flow(el, paginate) %}
 {% do return(el) %}
 {% endmacro %}
 
@@ -116,7 +127,7 @@
 
    `rows` and `cols` are one field or a list of fields (each becomes a grouping level); `values` is
    one measure or a list of them. Either `rows` or `cols` may be omitted. #}
-{% macro pivot_table(source, values, rows=none, cols=none, name=none, key=none, h=none, description=none, style=none) %}
+{% macro pivot_table(source, values, rows=none, cols=none, name=none, key=none, h=none, description=none, style=none, paginate=false) %}
 {% set source = sigma_report.resolve_source(source, 'pivot_table') %}
 {% if rows is none and cols is none %}
   {% do sigma_report.fail('pivot_table', "give at least one of `rows` or `cols`.") %}
@@ -141,5 +152,6 @@
 {% endif %}
 {% do sigma_report.apply_titles(el, name, description) %}
 {% do el.update(sigma_report.compact({"style": sigma_report.card_style(style)})) %}
+{% do sigma_report.apply_flow(el, paginate) %}
 {% do return(el) %}
 {% endmacro %}

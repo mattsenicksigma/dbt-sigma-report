@@ -80,3 +80,24 @@ assert_filter_empty_values_rejected | sigma_report.filter_by_value: values must 
 assert_filter_bad_mode_rejected | sigma_report.filter_by_value: mode must be 'include' or 'exclude', got 'maybe'
 assert_filter_nothing_to_filter_rejected | sigma_report.filter_by_value: no element is built on a warehouse table
 assert_filter_twice_rejected | sigma_report.filter_by_value: element
+assert_paginated_in_row_rejected | sigma_report.row: a paginated table spans the page width
+assert_paginated_in_stack_rejected | sigma_report.stack: a paginated table spans the page width
+assert_paginated_not_last_rejected | a paginated table must be the last block on its page
+assert_paginated_in_footer_rejected | a paginated table cannot sit in a footer panel
+assert_page_numbers_with_footer_row_rejected | sigma_report.report: page_numbers=true shares the footer row
+assert_bad_page_number_format_rejected | sigma_report.page_number: format must be a string using {page} and/or {total}
+assert_statement_footer_conflict_rejected | sigma_report.simple_statement: footer_note and report_args.footer both set
+assert_unknown_trigger_rejected | sigma_report.action: unknown trigger 'on-hover'
+assert_action_without_effects_rejected | sigma_report.action: effects must be a non-empty list
+assert_action_bad_effect_rejected | sigma_report.action: each effect must be built by a sigma_report effect macro
+assert_with_actions_non_element_rejected | sigma_report.with_actions: expected an element built by a sigma_report macro
+assert_duplicate_actions_rejected | sigma_report.with_actions: two actions on
+assert_bad_button_appearance_rejected | sigma_report.button: appearance must be
+assert_navigate_needs_one_target_rejected | sigma_report.navigate: pass exactly one of page= or element=
+assert_bad_effect_reference_rejected | sigma_report.refresh_element: element must be an element / page built by a sigma_report macro, or an id string
+assert_bad_download_format_rejected | sigma_report.download: format must be csv, excel, json, pdf or png
+assert_bad_cron_rejected | sigma_report.schedule: cron must be a 5-field cron expression
+assert_schedule_without_recipients_rejected | sigma_report.schedule: to must be a non-empty list of recipients
+assert_bad_recipient_rejected | sigma_report.schedule: a recipient is an email address or a Sigma target mapping
+assert_two_schedule_conditions_rejected | sigma_report.schedule: pass at most one of only_if_not_empty= / only_if_empty=
+assert_duplicate_schedule_names_rejected | sigma_report.report: two schedules are named 's'

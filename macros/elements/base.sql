@@ -41,6 +41,17 @@
 {% endmacro %}
 
 
+{# Marks a table or pivot table as paginated: Sigma's "Expand table rows", where the element grows to hold
+   all its rows at render time and continues onto further pages. It is a property of the element's place in
+   the layout (`flow="paginated"`), not of the element, so it is kept as a private key the layout reads.
+   `h` stays as the height reserved when the page is laid out. #}
+{% macro apply_flow(el, paginate) %}
+{% if paginate %}
+  {% do el.update({"_flow": "paginated"}) %}
+{% endif %}
+{% endmacro %}
+
+
 {# The height of a table showing `rows` data rows, measured from Sigma's own PDF export of a pushed
    report (a 252px table showed 6 rows): about 130px for the title, header row and summary bar, plus
    20px per row. It is a measurement, not a contract - Sigma can change its table chrome, so the

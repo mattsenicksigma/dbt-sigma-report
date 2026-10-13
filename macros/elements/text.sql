@@ -121,3 +121,16 @@
 {% endif %}
 {% do return(el) %}
 {% endmacro %}
+
+
+{# A page number: Sigma's dynamic text with the current page and the page count, for a footer.
+   `format` uses `{page}` and `{total}`, so '{page} of {total}' (the default) or 'Page {page}'. It is a
+   text element, so give it a narrow cell: `report(page_numbers=true)` does that for you. The height is
+   fixed: the formulas are short once rendered, so estimating from the source text would over-allocate. #}
+{% macro page_number(format='{page} of {total}', key='page-number', h=24) %}
+{% if format is not string or ('{page}' not in format and '{total}' not in format) %}
+  {% do sigma_report.fail('page_number', "format must be a string using {page} and/or {total}, got " ~ format) %}
+{% endif %}
+{% set body = format.replace('{page}', '{{CurrentPageNumber()}}').replace('{total}', '{{TotalPageCount()}}') %}
+{% do return(sigma_report.text('<p class="p-small">' ~ body ~ '</p>', key=key, h=h)) %}
+{% endmacro %}

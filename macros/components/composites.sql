@@ -115,7 +115,8 @@
   theme=a.get('theme', {}), folder_id=a.get('folder_id'), report_id=a.get('report_id'),
   description=a.get('description'), page_size=a.get('page_size'), orientation=a.get('orientation'),
   margin=a.get('margin'), gap=a.get('gap'), header=a.get('header'), footer=a.get('footer'),
-  header_height=a.get('header_height'), footer_height=a.get('footer_height')
+  header_height=a.get('header_height'), footer_height=a.get('footer_height'),
+  page_numbers=a.get('page_numbers', false), schedules=a.get('schedules', [])
 )) %}
 {% endmacro %}
 
@@ -138,14 +139,16 @@
    out two to a row (`charts_per_row`). The table is the detail view, built on the same source and
    showing `table_rows` rows (default 10) - or pass `table_h='fill'` to give it the rest of its page, or
    a pixel height. Give `table_page_count` (with `table_sort`) to run the table over that many pages of
-   `table_rows` rows each instead - see `table_pages`. Content that does not fit one page continues on the next
+   `table_rows` rows each instead - see `table_pages` - or `table_paginate=true` to let Sigma expand the
+   table to all its rows when the report renders (it must then be the last block). Content that does not
+   fit one page continues on the next
    (`paginate=true`). Pass any `sigma_report.report()` argument through `report_args`
    (page_size, orientation, margin, header, footer, theme, ...). The result is a finished report spec,
    ready for `sigma_report.materialize()`.
 
    It is built from the public macros only; when you outgrow it, write the same thing by hand with
    `page()` and `row()`. #}
-{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_rows=none, table_h=none, table_page_count=none, table_sort=[], report_args={}) %}
+{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_rows=none, table_h=none, table_page_count=none, table_paginate=false, table_sort=[], report_args={}) %}
 {% set blocks = sigma_report.report_header(name, subtitle) %}
 {% if kpis %}
   {% set tiles = [] %}
@@ -162,7 +165,7 @@
   {% do blocks.append(sigma_report.page_break()) %}
   {% for b in sigma_report.table_pages(source, table_columns, sigma_report.setting('table_rows', table_rows), pages=table_page_count, name=table_name, sort=table_sort) %}{% do blocks.append(b) %}{% endfor %}
 {% elif table_columns %}
-  {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, rows=table_rows, h=table_h, sort=table_sort)) %}
+  {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, rows=table_rows, h=table_h, sort=table_sort, paginate=table_paginate)) %}
 {% endif %}
 {% do return(sigma_report.report_from_args(name, blocks, report_args)) %}
 {% endmacro %}
