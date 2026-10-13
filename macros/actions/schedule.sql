@@ -22,7 +22,9 @@
 
 {# A recipient as Sigma's `target` entry. A string containing `@` is an email address. Anything else (a
    team, a Slack conversation, a webhook, a Google Drive folder) is a Sigma target mapping such as
-   {'teamId': ...} or {'slackConversationId': ...}, used as written. #}
+   {'teamId': ...} or {'slackConversationId': ...}, used as written. Sigma documents `slackConversationId`
+   as a Slack channel ID or member ID. The UI also accepts a #channel-name; the API docs don't say it does,
+   so use the ID. #}
 {% macro _recipient(value) %}
 {% if value is mapping %}
   {% if value | length == 0 %}

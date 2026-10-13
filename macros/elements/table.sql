@@ -11,7 +11,7 @@
    (field, 'asc'|'desc') pair. Charts and KPIs can use the returned table as their `source`, which is
    how "one table, several views of it" reports are built.
 
-   A table in a Sigma report does not paginate: it is a window onto the first rows of its sort order,
+   A table element in a Sigma report has no pagination setting: it is a window onto the first rows of its sort order,
    as many as its height allows, with the total row count in a summary bar. So the useful question is
    "how many rows do I show": `rows` (default 10) sets the height from that. Alternatively pass `h=` in
    pixels to fix the height, or `h='fill'` to take whatever is left of the page below it (it must sit
@@ -78,7 +78,7 @@
 
 
 {# A table that runs over several pages: a sequence of `table(window=...)` windows, one per page, with a
-   page break between them (so it needs `paginate=true` on its page). Sigma does not paginate tables
+   page break between them (so it needs `paginate=true` on its page). A table element does not paginate
    itself, so this is how "all the rows" is done - each page shows the next `rows_per_page` rows of the
    `sort` order, and each window's summary bar still shows the table's total.
 
