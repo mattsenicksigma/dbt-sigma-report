@@ -45,7 +45,7 @@ Short answer: composable enough that the common cases need no escape and the esc
 - **One place per concern.** Colors live in the theme; ids in `freeze_id`; where dbt nodes live in `relation_path`; page geometry in `layout.sql`; the output shape in `report()`. Changing the layout tags for a new API generation touches one file.
 - **Late binding where it matters.** Element colors are markers resolved when the report is assembled, so a report-level `theme=` recolors elements built earlier (a test pins this). Without it every element macro would need a `theme` argument.
 - **Width is not an element property.** Keeping width out of elements is what lets `row`, `stack` and `grid` recombine the same elements freely.
-- **Fail early, name the line.** Empty pages, duplicate names, colliding ids, bad tokens, malformed fields, bad page sizes and overflowing content all fail at `dbt parse` with the macro that caught them. 36 kinds of invalid input are pinned by tests, each with the exact message.
+- **Fail early, name the line.** Empty pages, duplicate names, colliding ids, bad tokens, malformed fields, bad page sizes and overflowing content all fail at `dbt parse` with the macro that caught them. 41 kinds of invalid input are pinned by tests, each with the exact message.
 
 ### Where it fell short, and what was done about it
 
@@ -56,13 +56,15 @@ Short answer: composable enough that the common cases need no escape and the esc
 | No way to set a Sigma option the macros do not expose, or use an element kind they do not model. | **Fixed**: `extend()` (deep-merge raw properties) and `raw()` (any kind, still laid out and id-checked). Both are tested and used in the integration report. |
 | Where a dbt node's table lives is unknowable at parse time, and was a hard-coded `target.schema` guess. | **Fixed**: one dispatched macro, `relation_path`, that a project overrides once; tested with a real override. (A first draft documented the override with the wrong macro name; the test is what caught it.) |
 | A `stack` placed directly on a page, or a row nested in a row, would produce garbage. | **Fixed**: `flow`, `row` and `stack` validate block types and name the fix. |
+| Fixed pixel heights: a 28px-high H1 clipped a long title (seen in Sigma's own render of a pushed example), and a "table of N hundred rows" could not be expressed. | **Fixed**: titles, headings and text are sized from their content and the cell width (resolved in the layout flow, where the width is finally known); tables take `rows=` or `h='fill'`; page background is white. Found by exporting the pushed report to PDF, which is now the recommended way to check a report visually. |
 | Chart macros repeat a long argument list. | **Accepted**: dbt's Jinja has no `**kwargs`. The repetition is confined to `xy_chart` / `part_to_whole` (internal), which the public macros feed, and `extend()` covers the long tail. |
 | `simple_dashboard` accepts data (mappings), a second calling convention next to the macros. | **Accepted**: it is a convenience over the primitives, with `kpi_from_spec` / `chart_from_spec` as public dispatchers. Nothing else depends on the mapping convention. |
 
 ### Still open (not done, on purpose or for lack of information)
 
 - **Layout is flow-only.** No `x`/`y` pinning, no overlays, no row spanning. An `at=(x, y)` override on `place` would be a small change, but not one to make before seeing what real reports need. `raw()` plus `extend()` cannot currently position an element outside the flow either.
-- **Heights are manual.** A table's or text block's height depends on data the compiler cannot see. A `fit=true` mode could estimate from `limit` and row height, but a wrong estimate is worse than an explicit number.
+- **Height estimates are heuristics.** Text height comes from character counts and font size, and table height from a measured 20px row plus ~130px of chrome. Both were calibrated against a real Sigma PDF export and are deliberately generous, but they are not Sigma's own numbers. Pin `h=` where it matters.
+- **No multi-page tables.** Sigma's code representation exposes no pagination or row-limit setting for tables: a table is a window onto the first rows of its sort order. `rows=` and `h='fill'` make that explicit rather than hiding it.
 - **Panel sizing is an assumption.** Header and footer heights are subtracted from the content area. If Sigma places panels inside the margin the reports will have extra white space, never overlap. This needs one look at a rendered report.
 - **Modeled element set is small** (see README, "Coverage and limits"). `raw()` reaches all the rest, but they carry no defaults or validation. Adding an element is mechanical (below).
 - **Formulas are opaque strings.** A small formula builder (`sigma_report.sum('amount')`) would help typos but not semantics, and would have to track Sigma's function set.

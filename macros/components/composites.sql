@@ -121,15 +121,16 @@
      )
 
    `kpis` and `charts` are lists of mappings (see `kpi_from_spec` / `chart_from_spec`); charts are laid
-   out two to a row (`charts_per_row`). The table is the detail view: it is built on the same source
-   and takes `table_h` pixels. Content that does not fit one page continues on the next
+   out two to a row (`charts_per_row`). The table is the detail view, built on the same source and
+   showing `table_rows` rows (default 10) - or pass `table_h='fill'` to give it the rest of its page, or
+   a pixel height. Content that does not fit one page continues on the next
    (`paginate=true`). Pass any `sigma_report.report()` argument through `report_args`
    (page_size, orientation, margin, header, footer, theme, ...). The result is a finished report spec,
    ready for `sigma_report.materialize()`.
 
    It is built from the public macros only; when you outgrow it, write the same thing by hand with
    `page()` and `row()`. #}
-{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_h=300, table_sort=[], report_args={}) %}
+{% macro simple_dashboard(name, source, subtitle=none, kpis=[], charts=[], charts_per_row=2, table_columns=none, table_name='Detail', table_rows=10, table_h=none, table_sort=[], report_args={}) %}
 {% set blocks = sigma_report.report_header(name, subtitle) %}
 {% if kpis %}
   {% set tiles = [] %}
@@ -142,7 +143,7 @@
   {% for r in sigma_report.grid(figures, per_row=charts_per_row) %}{% do blocks.append(r) %}{% endfor %}
 {% endif %}
 {% if table_columns %}
-  {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, h=table_h, sort=table_sort)) %}
+  {% do blocks.append(sigma_report.table(source, table_columns, name=table_name, rows=table_rows, h=table_h, sort=table_sort)) %}
 {% endif %}
 {% do return(sigma_report.report_from_args(name, blocks, report_args)) %}
 {% endmacro %}

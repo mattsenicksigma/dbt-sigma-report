@@ -11,14 +11,17 @@
    (field, 'asc'|'desc') pair. Charts and KPIs can use the returned table as their `source`, which is
    how "one table, several views of it" reports are built.
 
-   Reports are paginated and a table's row count is not known at compile time, so `h` is the height
-   you reserve for it on the page. #}
-{% macro table(source, columns, name=none, key=none, h=300, sort=[], description=none, style=none) %}
+   A table in a Sigma report does not paginate: it is a window onto the first rows of its sort order,
+   as many as its height allows, with the total row count in a summary bar. So the useful question is
+   "how many rows do I show": `rows` (default 10) sets the height from that. Alternatively pass `h=` in
+   pixels to fix the height, or `h='fill'` to take whatever is left of the page below it (it must sit
+   directly on a page, not in a row). Sort the table to choose which rows appear. #}
+{% macro table(source, columns, name=none, key=none, rows=10, h=none, sort=[], description=none, style=none) %}
 {% set source = sigma_report.resolve_source(source, 'table') %}
 {% if not columns %}
   {% do sigma_report.fail('table', "columns is required - list the fields the table should show.") %}
 {% endif %}
-{% set el = sigma_report.new_element('table', 'table', key, name, h) %}
+{% set el = sigma_report.new_element('table', 'table', key, name, h if h is not none else sigma_report.table_height(rows, name is not none)) %}
 {% set cols = [] %}
 {% set order = sigma_report.add_columns(cols, el['id'], columns, source, 'table') %}
 {% do el.update({"source": source, "columns": cols, "order": order}) %}

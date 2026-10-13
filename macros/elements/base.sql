@@ -19,8 +19,19 @@
 {% if not identity %}
   {% do sigma_report.fail(where, "set `name=` or `key=` so the element gets a stable id.") %}
 {% endif %}
+{% if h is string and h == 'fill' %}
+  {# resolved by the layout flow: the rest of the page from where the element lands #}
+  {% do return({
+    "id": sigma_report.freeze_id('element:' ~ kind ~ ':' ~ identity),
+    "kind": kind,
+    "_key": kind ~ ':' ~ identity,
+    "_h": 1,
+    "_fill": true,
+    "_fill_min": 120,
+  }) %}
+{% endif %}
 {% if h is not number or h <= 0 %}
-  {% do sigma_report.fail(where, "h must be a positive number of pixels, got " ~ h) %}
+  {% do sigma_report.fail(where, "h must be a positive number of pixels, or 'fill', got " ~ h) %}
 {% endif %}
 {% do return({
   "id": sigma_report.freeze_id('element:' ~ kind ~ ':' ~ identity),
@@ -28,6 +39,19 @@
   "_key": kind ~ ':' ~ identity,
   "_h": h,
 }) %}
+{% endmacro %}
+
+
+{# The height of a table showing `rows` data rows, measured from Sigma's own PDF export of a pushed
+   report (a 252px table showed 6 rows): about 130px for the title, header row and summary bar, plus
+   20px per row. It is a measurement, not a contract - Sigma can change its table chrome. Sigma does not paginate a table or expose a row limit in
+   the code representation: a table is a window of as many rows as its height allows (sorted as you
+   asked), with the total row count in its summary bar. So "how tall" really means "how many rows". #}
+{% macro table_height(rows, titled=true) %}
+{% if rows is not number or rows < 1 %}
+  {% do sigma_report.fail('table', "rows must be a positive number of visible rows, got " ~ rows) %}
+{% endif %}
+{% do return(((130 if titled else 92) + 20 * rows) | int) %}
 {% endmacro %}
 
 
