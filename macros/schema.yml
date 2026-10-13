@@ -697,7 +697,7 @@ macros:
         type: any
         description: "Overrides the default card look (a Sigma `style` mapping)."
   - name: table
-    description: "A table element. Sigma tables do not paginate: they show the first `rows` rows of the sort order, so `rows` (or `h`) sets the height."
+    description: "A table element, which does not paginate by itself: it shows the first `rows` rows of the sort order, so `rows` (or `h`) sets the height."
     arguments:
       - name: source
         type: any
@@ -713,7 +713,7 @@ macros:
         description: "Identity the element's id is derived from; defaults to the name. Set it when two elements share a name, or to keep an id stable across a rename."
       - name: rows
         type: int
-        description: "Data rows shown (default 10). Sigma tables do not paginate: they show as many rows as their height allows, so this sets the height."
+        description: "Data rows shown (default 10). A table element shows as many rows as its height allows, so this sets the height."
       - name: h
         type: any
         description: "Height in pixels, or `fill` for the rest of the page. Overrides `rows`."
@@ -1234,7 +1234,7 @@ macros:
         type: dict[string,any]
         description: "Properties merged onto the element as is."
   - name: table_pages
-    description: "A table that runs over several pages: one `table(window=...)` per page with a page break between. Sigma does not paginate tables itself."
+    description: "A table that runs over several pages: one `table(window=...)` per page with a page break between. A table element does not paginate itself."
     arguments:
       - name: source
         type: any

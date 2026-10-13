@@ -46,7 +46,7 @@
    20px per row. It is a measurement, not a contract - Sigma can change its table chrome, so the
    numbers are project settings (`table_row_h`, `table_chrome`, `table_chrome_untitled`).
 
-   A Sigma table does not paginate and has no row limit setting: it is a window of as many rows as its
+   A Sigma table element has no row-limit or pagination setting: it is a window of as many rows as its
    height allows, with the total row count in its summary bar. So "how tall" means "how many rows";
    `table_pages` shows more rows by stacking several windows. #}
 {% macro table_height(rows, titled=true) %}
