@@ -47,7 +47,7 @@ Not on the dbt Package Hub yet; install from git in `packages.yml`:
 ```yaml
 packages:
   - git: "https://github.com/mattsenicksigma/dbt-sigma-report.git"
-    revision: main            # pin a tag or commit for reproducible builds
+    revision: v1.0.0          # a release tag; pin it for reproducible builds
 ```
 
 Then `dbt deps`. To read from Sigma data model tables, also install [`Matts52/dbt-sigma-data-models`](https://github.com/Matts52/dbt-sigma-data-models) (optional).
